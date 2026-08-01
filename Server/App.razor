@@ -1,0 +1,13 @@
+@using Microsoft.AspNetCore.Components.Routing
+@using Server.Pages.Shared
+
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <p>페이지를 찾을 수 없습니다.</p>
+        </LayoutView>
+    </NotFound>
+</Router>

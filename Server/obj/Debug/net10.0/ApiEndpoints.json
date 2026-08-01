@@ -1,0 +1,12 @@
+[
+  {
+    "ContainingType": "GameServer.Controllers.ServerController",
+    "Method": "Server",
+    "RelativePath": "Server",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  }
+]

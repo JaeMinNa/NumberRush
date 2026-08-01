@@ -813,6 +813,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 22685d822a52755479c134b6abb045cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TitleScene
+  Root_UI: {fileID: 342521967}
 --- !u!4 &1115610739
 Transform:
   m_ObjectHideFlags: 0

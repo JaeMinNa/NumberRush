@@ -19,7 +19,7 @@ public partial class PacketSystem
                         //var InviteRankList = Util.ToObjectJson<List<InviteRankInfo>>(Datas[1]);
                         //UIManager.Instance.Open<Popup_Friend_Event>(UI.Popup, "UI/Popup/Popup_Friend_Event", new List<object>() { MyInviteRank, InviteRankList });
 
-                        Debug.Log($"NickName 변경 성공! : {User.UserCommonData.NickName}, UID : {User.UserCommonData.UID}, AccountCode : {User.UserCommonData.AccountCode}");
+                        Debug.LogWarning($"NickName 변경 성공! : {User.UserCommonData.NickName}, UID : {User.UserCommonData.UID}, AccountCode : {User.UserCommonData.AccountCode}");
                     }
                 }
                 break;
@@ -29,7 +29,7 @@ public partial class PacketSystem
                     if (Success)
                     {
                         string Notice = Data;
-                        Debug.Log(Notice);
+                        Debug.LogWarning(Notice);
                     }
                 }
                 break;
