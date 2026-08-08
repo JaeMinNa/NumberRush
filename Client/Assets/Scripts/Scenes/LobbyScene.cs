@@ -10,6 +10,6 @@ public class LobbyScene : MonoBehaviour
         UIManager.Instance.SetActiveRoot(UI.BackGround, false);
 
         // 로비
-        //UIManager.Instance.Open<LobbyWindow>(UI.Main, "Prefabs/LobbyWindow");
+        UIManager.Instance.Open<LobbyWindow>(UI.Main, "Prefabs/UI/Window/LobbyWindow");
     }
 }

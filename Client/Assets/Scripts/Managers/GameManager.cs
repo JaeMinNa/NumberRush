@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : Singleton<GameManager>
 {
@@ -67,18 +68,6 @@ public class GameManager : Singleton<GameManager>
     #endregion
 
     #region Public Method
-    public static bool IsEditor
-    {
-        get
-        {
-#if UNITY_EDITOR
-            return true;
-#else
-            return false;
-#endif
-        }
-    }
-
     public void InitDefaultManager()
     {
         //_ = NetworkManager.Instance;
@@ -215,6 +204,13 @@ public class GameManager : Singleton<GameManager>
 
     //    IsEndLoad = true;
     //}
+
+    public void LoadLobbyScenen()
+    {
+        SceneManager.LoadScene("LobbyScene");
+
+        // Todo
+    }
 
     #endregion
 

@@ -382,4 +382,13 @@ public static class Util
         string jsonString = JsonConvert.SerializeObject(source);
         return JsonConvert.DeserializeObject<T>(jsonString);
     }
+
+    public static bool IsEditor()
+    {
+        #if UNITY_EDITOR
+                return true;
+        #else
+            return false;
+        #endif
+    }
 }
