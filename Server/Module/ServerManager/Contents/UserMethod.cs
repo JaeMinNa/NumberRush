@@ -5,7 +5,6 @@ namespace GameServer.Module.ServerManager.Contents
 {
     public class UserMethod
     {
-        #region Common Data
         private static async Task<UserData_Common> CreateUserCommonData(string accountCode)
         {
             UserData_Common uInfo = new UserData_Common();
@@ -179,6 +178,5 @@ namespace GameServer.Module.ServerManager.Contents
         {
             return await ServerDataBase.GetUserTotalCount();
         }
-        #endregion
     }
 }

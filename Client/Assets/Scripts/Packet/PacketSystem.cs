@@ -74,6 +74,38 @@ public partial class PacketSystem
                     }
                     break;
 
+                case ReceiveType.UpdateUserNumberData:
+                    {
+                        eUserData_Number Type = (eUserData_Number)receiveIndex;
+                        switch (Type)
+                        {
+                            case eUserData_Number.AccountCode:
+                            {
+                                    User.UserNumberData.AccountCode = data;
+                                }
+                                break;
+
+                            case eUserData_Number.NumberInventory:
+                                {
+                                    User.UserNumberData.NumberInventory = Util.ToObjectJson<List<int>>(data);
+                                }
+                                break;
+
+                            case eUserData_Number.EquipNumber:
+                                {
+                                    User.UserNumberData.EquipNumber = Util.ToObjectJson<List<int>>(data);
+                                }
+                                break;
+
+                            case eUserData_Number.Max:
+                                {
+                                    User.UserNumberData = Util.ToObjectJson<UserData_Number>(data);
+                                }
+                                break;
+                        }
+                    }
+                    break;
+
                 case ReceiveType.Max:
                     break;
             }
@@ -91,6 +123,12 @@ public partial class PacketSystem
             case ContentsType.User:
                 {
                     Excute_User(headerData);
+                }
+                break;
+
+            case ContentsType.UserNumber:
+                {
+                    Excute_UserNumber(headerData);
                 }
                 break;
         }

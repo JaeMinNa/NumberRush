@@ -7,7 +7,6 @@ namespace GameServer.Module.ServerManager.DataBase
 {
     public partial class ServerDataBase
     {
-        #region Common Data
         public static async Task DataBaseIndex_UserCommon()
         {
             var collection = UserDB.GetCollection<UserData_Common>(nameof(UserCollection.UserCommonData));
@@ -157,6 +156,5 @@ namespace GameServer.Module.ServerManager.DataBase
             var Result = await UserDB.GetCollection<UserData_Common>(nameof(UserCollection.UserCommonData)).Find(Builders<UserData_Common>.Filter.Empty).Limit(0).ToListAsync();
             return Result.Count;
         }
-        #endregion
     }
 }

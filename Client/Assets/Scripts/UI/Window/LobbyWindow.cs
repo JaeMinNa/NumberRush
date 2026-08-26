@@ -8,7 +8,7 @@ using UnityEngine.UI;
 public class LobbyWindow : UIElement
 {
     #region Cashed Object
-
+    [SerializeField] private Button Btn_GameStart = null;
     #endregion
 
     #region Member Property
@@ -17,7 +17,10 @@ public class LobbyWindow : UIElement
     #region Override Method
     public override void Init()
     {
+        // 초기화
 
+        // 버튼 연결
+        Btn_GameStart.onClick.AddListener(OnClick_GameStart);
     }
 
     public override void OnOpen(List<object> args)
@@ -39,6 +42,9 @@ public class LobbyWindow : UIElement
     #endregion
 
     #region Member Method
-    
+    private void OnClick_GameStart()
+    {
+        GameManager.Instance.LoadGameScenen();
+    }
     #endregion
 }

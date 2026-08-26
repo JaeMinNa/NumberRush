@@ -10,6 +10,7 @@
 /Client/[Bb]uilds/
 /Client/[Ll]ogs/
 /Client/[Uu]ser[Ss]ettings/
+/DB/dbPath/
 *.log
 
 # MemoryCaptures can get excessive in size.

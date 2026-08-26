@@ -14783,6 +14783,7 @@ MonoBehaviour:
   UIName: 
   RectTransform: {fileID: 0}
   UIParent: 0
+  Btn_GameStart: {fileID: 5150700375631806130}
 --- !u!1 &5150700376002382247
 GameObject:
   m_ObjectHideFlags: 0

@@ -69,4 +69,11 @@ public static class RandomUtil
         var randomValue = Random.Range(startNum, endNum + 1);
         return randomValue;
     }
+
+    // startNum ~ endNum 숫자 중 하나의 랜덤 숫자를 가져옴
+    public static float GetRandomfloat(float startNum, float endNum)
+    {
+        var randomValue = Random.Range(startNum, endNum);
+        return randomValue;
+    }
 }

@@ -66,6 +66,10 @@ namespace GameServer.Module.ServerManager
                         userDatas.Add($"{nameof(UserData_Common)}${ServerUtil.ToJson(await UserMethod.GetUserCommonDataToConnect(accountCode))}");
                         break;
 
+                    case UserCollection.UserNumberData:
+                        userDatas.Add($"{nameof(UserData_Number)}${ServerUtil.ToJson(await NumberMethod.GetUserNumberDataToConnect(accountCode))}");
+                        break;
+
                     default:
                         break;
                 }
@@ -105,6 +109,10 @@ namespace GameServer.Module.ServerManager
                 case ContentsType.User:
                     {
                         return await Processor.ProcessPacket_User(accountCode, PacketData);
+                    }
+                case ContentsType.UserNumber:
+                    {
+                        return await Processor.ProcessPacket_UserNumber(accountCode, PacketData);
                     }
             }
 

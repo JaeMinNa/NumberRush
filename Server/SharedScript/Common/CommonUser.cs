@@ -7,9 +7,25 @@ public enum eUserData_Common
     Max,
 }
 
+public enum eUserData_Number
+{
+    AccountCode,
+    NumberInventory,
+    EquipNumber,
+
+    Max,
+}
+
 public class UserData_Common
 {
     public string AccountCode = string.Empty;
     public string UID = string.Empty;
     public string NickName = string.Empty;
+}
+
+public class UserData_Number
+{
+    public string AccountCode = string.Empty;
+    public List<int> NumberInventory = null;
+    public List<int> EquipNumber = null;
 }

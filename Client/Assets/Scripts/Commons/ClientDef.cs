@@ -2,14 +2,21 @@ using UnityEngine.Events;
 
 public static class ClientDef
 {
-    public static readonly int MAX_PARTYMEMBER = 3;
+    // Normal Block
+    public static readonly int BLOCK_DEFAULTHP = 1;
+    public static readonly int BLOCK_MAXNUM = 15;
+    public static readonly float BLOCK_MINSPAWNTIME = 3f;
+    public static readonly float BLOCK_MAXSPAWNTIME = 10f;
+    public static readonly float BLOCK_SPAWN_X = 2.5f;
+    public static readonly float BLOCK_SPAWN_Y = 5.5f;
+    public static readonly float BLOCK_MOVE_X = 2.6f;
+    public static readonly float BLOCK_DESTROY_Y = -3.7f;
 
-    #region Player Preference
-    public static readonly string PomeSortOrderKey = "PomeSortOrder";
-    public static readonly string LastTutorialGroupKey = "LastTutorialGroup";
-    public static readonly string IsPomeSavedKey = "IsPomeSaved";
-    public static readonly string PomeGameOptionKey = "PomeGameOption";
-    #endregion
+    // Armor Block
+    public static readonly float ARMORBLOCK_SCALE = 1.5f;
+
+    // Ghost Block
+    public static readonly float GHOSTBLOCK_INTERVAL = 0.5f;
 }
 
 public class MessageData
@@ -28,6 +35,24 @@ public enum PopupType
     OkCancel,
 
     Max
+}
+
+public enum FormulaOperator
+{
+    Plus,
+    Subtract,
+    Multiply,
+    Divide
+}
+
+[System.Flags]
+public enum BlockType
+{
+    None = 0,
+    Rotation = 1 << 0,  // 1
+    Move = 1 << 1,  // 2
+    Armor = 1 << 2,  // 4
+    Ghost = 1 << 3,  // 8
 }
 
 public enum eItemType

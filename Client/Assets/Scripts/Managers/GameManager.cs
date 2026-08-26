@@ -209,7 +209,14 @@ public class GameManager : Singleton<GameManager>
     {
         SceneManager.LoadScene("LobbyScene");
 
-        // Todo
+        // todo
+    }
+
+    public void LoadGameScenen()
+    {
+        SceneManager.LoadScene("GameScene");
+
+        // todo
     }
 
     #endregion
@@ -227,6 +234,9 @@ public class GameManager : Singleton<GameManager>
             {
                 // 유저 기본 데이터
                 case nameof(UserData_Common): User.SetUserCommonData(Util.ToObjectJson<UserData_Common>(Datas[1])); break;
+
+                // 유저 숫자 데이터
+                case nameof(UserData_Number): User.SetUserNumberData(Util.ToObjectJson<UserData_Number>(Datas[1])); break;
             }
         }
     }

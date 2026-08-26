@@ -19,6 +19,7 @@ public enum ContentsType
     None,
 
     User,
+    UserNumber,
 
     Max,
 }
@@ -32,6 +33,13 @@ public enum UserContents
 
     Max
 }
+
+public enum UserNumberContents
+{
+    None,
+
+    Max
+}
 #endregion
 
 #region ReceivePacket
@@ -42,6 +50,7 @@ public enum ReceiveType
     None,
 
     UpdateUserCommonData,
+    UpdateUserNumberData,
 
     ShowMessage,
 

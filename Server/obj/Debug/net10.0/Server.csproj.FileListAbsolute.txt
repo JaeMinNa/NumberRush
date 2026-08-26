@@ -97,8 +97,6 @@ D:\Git\Github\NumberRush\Server\obj\Debug\net10.0\compressed\suzf0los44-{0}-2z0n
 D:\Git\Github\NumberRush\Server\obj\Debug\net10.0\compressed\erkt40qq4p-{0}-muycvpuwrr-muycvpuwrr.gz
 D:\Git\Github\NumberRush\Server\obj\Debug\net10.0\compressed\blh1dr9496-{0}-87fc7y1x7t-87fc7y1x7t.gz
 D:\Git\Github\NumberRush\Server\obj\Debug\net10.0\compressed\tp3g4xwoi6-{0}-mlv21k5csn-mlv21k5csn.gz
-D:\Git\Github\NumberRush\Server\obj\Debug\net10.0\compressed\wyooshfw4p-{0}-f7fxoh55ae-f7fxoh55ae.gz
-D:\Git\Github\NumberRush\Server\obj\Debug\net10.0\compressed\7l7rok0io1-{0}-68qhiysw0j-68qhiysw0j.gz
 D:\Git\Github\NumberRush\Server\obj\Debug\net10.0\staticwebassets.build.json
 D:\Git\Github\NumberRush\Server\obj\Debug\net10.0\staticwebassets.build.json.cache
 D:\Git\Github\NumberRush\Server\obj\Debug\net10.0\staticwebassets.development.json
@@ -111,3 +109,5 @@ D:\Git\Github\NumberRush\Server\obj\Debug\net10.0\refint\Server.dll
 D:\Git\Github\NumberRush\Server\obj\Debug\net10.0\Server.pdb
 D:\Git\Github\NumberRush\Server\obj\Debug\net10.0\Server.genruntimeconfig.cache
 D:\Git\Github\NumberRush\Server\obj\Debug\net10.0\ref\Server.dll
+D:\Git\Github\NumberRush\Server\obj\Debug\net10.0\compressed\wyooshfw4p-{0}-wyu7y4jcvb-wyu7y4jcvb.gz
+D:\Git\Github\NumberRush\Server\obj\Debug\net10.0\compressed\7l7rok0io1-{0}-wfr2hj6447-wfr2hj6447.gz

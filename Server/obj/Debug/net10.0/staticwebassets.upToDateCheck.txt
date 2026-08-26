@@ -61,8 +61,8 @@ wwwroot\lib\jquery\dist\jquery.slim.js
 wwwroot\lib\jquery\dist\jquery.slim.min.js
 wwwroot\lib\jquery\dist\jquery.slim.min.map
 wwwroot\lib\jquery\LICENSE.txt
-C:\Users\나재민\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.10\build\..\_framework\blazor.web.js
-C:\Users\나재민\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.10\build\..\_framework\blazor.server.js
+C:\Users\나재민\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.11\build\..\_framework\blazor.web.js
+C:\Users\나재민\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.11\build\..\_framework\blazor.server.js
 D:\Git\Github\NumberRush\Server\wwwroot\css\site.css
 D:\Git\Github\NumberRush\Server\wwwroot\favicon.ico
 D:\Git\Github\NumberRush\Server\wwwroot\js\site.js
@@ -125,5 +125,5 @@ D:\Git\Github\NumberRush\Server\wwwroot\lib\jquery\dist\jquery.slim.js
 D:\Git\Github\NumberRush\Server\wwwroot\lib\jquery\dist\jquery.slim.min.js
 D:\Git\Github\NumberRush\Server\wwwroot\lib\jquery\dist\jquery.slim.min.map
 D:\Git\Github\NumberRush\Server\wwwroot\lib\jquery\LICENSE.txt
-C:\Users\나재민\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.10\_framework\blazor.web.js
-C:\Users\나재민\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.10\_framework\blazor.server.js
+C:\Users\나재민\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.11\_framework\blazor.server.js
+C:\Users\나재민\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.11\_framework\blazor.web.js
