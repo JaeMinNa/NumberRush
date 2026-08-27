@@ -2,6 +2,10 @@ using UnityEngine.Events;
 
 public static class ClientDef
 {
+    // Game
+    public static readonly int GAME_SKIPTOTALCOUNT = 5;
+    public static readonly int GAME_DEFAULTHP = 5;
+
     // Normal Block
     public static readonly int BLOCK_DEFAULTHP = 1;
     public static readonly int BLOCK_MAXNUM = 15;

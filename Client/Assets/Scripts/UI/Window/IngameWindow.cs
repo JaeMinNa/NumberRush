@@ -1,7 +1,8 @@
 using System.Collections.Generic;
+using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 public class IngameWindow : UIElement
 {
@@ -35,15 +36,31 @@ public class IngameWindow : UIElement
         if (m_ChapterModule == null)
             m_ChapterModule = BattleModule.Instance as ChapterModule;
 
-        // 버튼 연결
+        // Normal 버튼 연결
         for (int i = 0; i < Btn_NormalNumbers.Length; ++i)
         {
             int number = i + 1;
-
             Btn_NormalNumbers[i].onClick.AddListener(() =>
             {
                 OnClick_Number(number);
             });
+        }
+
+        // Equip 버튼 연결
+        for (int i = 0; i < Btn_EquipNumbers.Length; ++i)
+            Btn_EquipNumbers[i].gameObject.SetActive(false);
+
+
+        for (int i = 0; i < m_ChapterModule.EquipNumbers.Count; ++i)
+        {
+            int number = m_ChapterModule.EquipNumbers[i];
+            Btn_EquipNumbers[i].onClick.AddListener(() =>
+            {
+                OnClick_Number(number);
+            });
+
+            Btn_EquipNumbers[i].GetComponentInChildren<TextMeshProUGUI>().text = number.ToString();
+            Btn_EquipNumbers[i].gameObject.SetActive(true);
         }
 
         Btn_Skip.onClick.AddListener(OnClick_Skip);

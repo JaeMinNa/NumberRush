@@ -47,7 +47,8 @@ public class ChapterModule : BattleModule
     public int SkipNowCount { get => m_SkipNowCount; set => m_SkipNowCount = value; }
     public int CurHp { get => m_Hp; set => m_Hp = value; }
     public int Score { get => m_Score; set => m_Score = value;  }
-    public float CurTime => m_Time;
+    public float CurTime { get => m_Time; }
+    public List<int> EquipNumbers { get => m_EquipNumber; }
     #endregion
 
     #region Overrid Method
@@ -182,9 +183,9 @@ public class ChapterModule : BattleModule
     // 초기화
     private void InitChapter()
     {
-        m_SkipTotalCount = 3;
-        m_SkipNowCount = 3;
-        m_Hp = 5;
+        m_SkipTotalCount = ClientDef.GAME_SKIPTOTALCOUNT;
+        m_SkipNowCount = ClientDef.GAME_SKIPTOTALCOUNT;
+        m_Hp = ClientDef.GAME_DEFAULTHP;
         m_Score = 0;
         m_Time = 0f;
 
@@ -194,8 +195,9 @@ public class ChapterModule : BattleModule
         // 장착 숫자 
         m_EquipNumber = User.UserNumberData.EquipNumber;
 
-        Debug.LogError(m_EquipNumber);
-        Debug.LogError(User.UserNumberData.AccountCode);
+        m_EquipNumber.Add(10);
+        m_EquipNumber.Add(15);
+        m_EquipNumber.Add(0);
 
         // 첫 블록 생성 시간 결정
         ResetBlockSpawnTime();
