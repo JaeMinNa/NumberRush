@@ -25,6 +25,7 @@ namespace GameServer.Module.ServerManager.DataBase
                     // User 
                     case UserCollection.UserCommonData: await DataBaseIndex_UserCommon(); break;
                     case UserCollection.UserNumberData: await DataBaseIndex_UserNumber(); break;
+                    case UserCollection.UserGameData: await DataBaseIndex_UserGame(); break;
                     default:
                         break;
                 }

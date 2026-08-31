@@ -10,6 +10,7 @@ public class IngameWindow : UIElement
     [Header("TopUI")]
     [SerializeField] private TMP_Text Text_Hp = null;
     [SerializeField] private TMP_Text Text_Time = null;
+    [SerializeField] private TMP_Text Text_Gold = null;
     [SerializeField] private TMP_Text Text_Score = null;
     [SerializeField] private Button Btn_Pause = null;
 
@@ -66,12 +67,15 @@ public class IngameWindow : UIElement
         Btn_Skip.onClick.AddListener(OnClick_Skip);
         Btn_Clear.onClick.AddListener(OnClick_Clear);
         Btn_Equal.onClick.AddListener(OnClick_Equal);
+        Btn_Pause.onClick.AddListener(OnClick_Pause);
     }
 
     public override void OnOpen(List<object> args)
     {
         RefreshTopUI();
         RefreshFormula();
+
+        m_ChapterModule.SetPause(false);
     }
 
     public override void OnClose()
@@ -123,6 +127,11 @@ public class IngameWindow : UIElement
         RefreshFormula();
     }
 
+    private void OnClick_Pause()
+    {
+        m_ChapterModule.SetPause(true, true);
+    }
+
     private void RefreshFormula()
     {
         // 모든 슬롯 비활성화, 텍스트 초기화
@@ -165,6 +174,7 @@ public class IngameWindow : UIElement
     {
         Text_Hp.text = m_ChapterModule.CurHp.ToString();
         Text_Score.text = $"SCORE {m_ChapterModule.Score}";
+        Text_Gold.text = $"{m_ChapterModule.Gold}";
     }
     #endregion
 

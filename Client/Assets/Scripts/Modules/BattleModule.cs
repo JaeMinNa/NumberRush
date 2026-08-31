@@ -74,7 +74,7 @@ public class BattleModule : MonoBehaviour
     }
 
     // 게임 끝
-    protected virtual void EndGame()
+    public virtual void EndGame()
     {
         //if (MonsterMovementSystem != null)
         //    Destroy(MonsterMovementSystem);
@@ -88,6 +88,15 @@ public class BattleModule : MonoBehaviour
 
         // Module 제거
         DestroyModule();
+    }
+
+    // 게임 재시작
+    public async virtual UniTask RestartGame()
+    {
+        // 일시정지 해제
+        SetPause(false);
+
+        await UniTask.Yield();
     }
     #endregion
 
@@ -107,27 +116,17 @@ public class BattleModule : MonoBehaviour
 
     public void SetPause(bool isOn, bool isShowPauseUI = false)
     {
-        //m_IsPause = isOn;
+        if (isOn)
+        {
+            Time.timeScale = 0f;
 
-        //if (m_IsPause)
-        //{
-        //    Time.timeScale = 0f;
-
-        //    if (isShowPauseUI)
-        //    {
-        //        var arenaModule = Instance as PvPArenaModule;
-        //        if (arenaModule != null)
-        //            UIManager.Instance.Open<Popup_Arena_Pause>(UI.Popup, "UI/Popup/Popup_Arena_Pause");
-        //        else
-        //            UIManager.Instance.Open<PauseWindow>(UI.Main, "UI/Ingame/PauseWindow");
-
-        //        arenaModule = null;
-        //    }
-        //}
-        //else
-        //{
-        //    Time.timeScale = 1f;
-        //}
+            if (isShowPauseUI)
+                UIManager.Instance.Open<Popup_Pause>(UI.Popup, "Prefabs/UI/Popup/Popup_Pause");
+        }
+        else
+        {
+            Time.timeScale = 1f;
+        }
     }
     #endregion
 }

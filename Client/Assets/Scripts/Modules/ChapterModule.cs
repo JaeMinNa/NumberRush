@@ -28,6 +28,7 @@ public class ChapterModule : BattleModule
 
     private int m_Hp = 0;
     private int m_Score = 0;
+    private int m_Gold = 0;
     private float m_Time = 0f;
 
     private GameObject m_BlockPrefab;
@@ -47,6 +48,8 @@ public class ChapterModule : BattleModule
     public int SkipNowCount { get => m_SkipNowCount; set => m_SkipNowCount = value; }
     public int CurHp { get => m_Hp; set => m_Hp = value; }
     public int Score { get => m_Score; set => m_Score = value;  }
+    public int Gold { get => m_Score; set => m_Score = value; }
+
     public float CurTime { get => m_Time; }
     public List<int> EquipNumbers { get => m_EquipNumber; }
     #endregion
@@ -60,9 +63,32 @@ public class ChapterModule : BattleModule
         SetFormula();
     }
 
-    protected override void EndGame()
+    public override void EndGame()
     {
         base.EndGame();
+    }
+
+    public async override UniTask RestartGame()
+    {
+        await base.RestartGame();
+
+        // 기존 블록 제거
+        Block[] blocks = FindObjectsByType<Block>(FindObjectsSortMode.None);
+
+        foreach (Block block in blocks)
+        {
+            if (block != null)
+                Destroy(block.gameObject);
+        }
+
+        // 챕터 데이터 초기화
+        InitChapter();
+
+        // 새로운 공식 생성
+        SetFormula();
+
+        // UI 갱신
+        UIManager.Instance.Refresh();
     }
     #endregion
 
@@ -174,7 +200,8 @@ public class ChapterModule : BattleModule
 
             Debug.LogError("GameOver");
 
-            EndGame();
+            SetPause(true);
+            UIManager.Instance.Open<Popup_EndGame>(UI.Popup, "Prefabs/UI/Popup/Popup_EndGame");
         }
     }
     #endregion
@@ -187,6 +214,7 @@ public class ChapterModule : BattleModule
         m_SkipNowCount = ClientDef.GAME_SKIPTOTALCOUNT;
         m_Hp = ClientDef.GAME_DEFAULTHP;
         m_Score = 0;
+        m_Gold = 0;
         m_Time = 0f;
 
         // Block Prefab 로드
@@ -194,10 +222,6 @@ public class ChapterModule : BattleModule
 
         // 장착 숫자 
         m_EquipNumber = User.UserNumberData.EquipNumber;
-
-        m_EquipNumber.Add(10);
-        m_EquipNumber.Add(15);
-        m_EquipNumber.Add(0);
 
         // 첫 블록 생성 시간 결정
         ResetBlockSpawnTime();
@@ -407,6 +431,7 @@ public class ChapterModule : BattleModule
                 }
 
                 AddScore(100);
+                AddGold(100);
 
                 // 계산 공식 변경
                 SetFormula();
@@ -420,6 +445,12 @@ public class ChapterModule : BattleModule
     {
         m_Score += score;
 
+        UIManager.Instance.Refresh();
+    }
+
+    private void AddGold(int gold)
+    {
+        m_Gold += gold;
         UIManager.Instance.Refresh();
     }
     #endregion

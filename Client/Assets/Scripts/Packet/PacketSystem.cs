@@ -106,6 +106,44 @@ public partial class PacketSystem
                     }
                     break;
 
+                case ReceiveType.UpdateUserGameData:
+                    {
+                        eUserData_Game Type = (eUserData_Game)receiveIndex;
+                        switch (Type)
+                        {
+                            case eUserData_Game.AccountCode:
+                                {
+                                    User.UserGameData.AccountCode = data;
+                                }
+                                break;
+
+                            case eUserData_Game.Score:
+                                {
+                                    User.UserGameData.Score = Util.ToObjectJson<int>(data);
+                                }
+                                break;
+
+                            case eUserData_Game.Gold:
+                                {
+                                    User.UserGameData.Gold = Util.ToObjectJson<int>(data);
+                                }
+                                break;
+
+                            case eUserData_Game.Time:
+                                {
+                                    User.UserGameData.Time = Util.ToObjectJson<int>(data);
+                                }
+                                break;
+
+                            case eUserData_Game.Max:
+                                {
+                                    User.UserGameData = Util.ToObjectJson<UserData_Game>(data);
+                                }
+                                break;
+                        }
+                    }
+                    break;
+
                 case ReceiveType.Max:
                     break;
             }
@@ -129,6 +167,12 @@ public partial class PacketSystem
             case ContentsType.UserNumber:
                 {
                     Excute_UserNumber(headerData);
+                }
+                break;
+
+            case ContentsType.UserGame:
+                {
+                    Excute_UserGame(headerData);
                 }
                 break;
         }

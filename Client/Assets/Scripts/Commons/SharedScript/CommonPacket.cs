@@ -20,6 +20,7 @@ public enum ContentsType
 
     User,
     UserNumber,
+    UserGame,
 
     Max,
 }
@@ -40,6 +41,15 @@ public enum UserNumberContents
 
     Max
 }
+
+public enum UserGameContents
+{
+    None,
+
+    EndChapter,
+
+    Max,
+}
 #endregion
 
 #region ReceivePacket
@@ -51,6 +61,7 @@ public enum ReceiveType
 
     UpdateUserCommonData,
     UpdateUserNumberData,
+    UpdateUserGameData,
 
     ShowMessage,
 

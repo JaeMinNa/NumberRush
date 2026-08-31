@@ -6,6 +6,9 @@ public class User
 
     // 유저의 숫자 정보
     public static UserData_Number UserNumberData { get; set; } = null;
+
+    // 유저의 게임 정보
+    public static UserData_Game UserGameData { get; set; } = null;
     #endregion
 
     #region Set
@@ -17,6 +20,11 @@ public class User
     public static void SetUserNumberData(UserData_Number Data)
     {
         UserNumberData = Data;
+    }
+
+    public static void SetUserGameData(UserData_Game Data)
+    {
+        UserGameData = Data;
     }
     #endregion
 }
