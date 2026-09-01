@@ -34,6 +34,15 @@ public partial class PacketSystem
                 }
                 break;
 
+            case UserContents.GoldCheat:
+                {
+                    if (Success)
+                    {
+                        
+                    }
+                }
+                break;
+
             default:
                 break;
         }

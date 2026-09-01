@@ -32,6 +32,7 @@ public class LobbyWindow : UIElement
         Btn_GameStart.onClick.AddListener(OnClick_GameStart);
         Btn_GoldAdd.onClick.AddListener(OnClick_GoldAdd);
         Btn_Numbers.onClick.AddListener(OnClick_Numbers);
+        Btn_Shop.onClick.AddListener(OnClick_Shop);
         Btn_Settings.onClick.AddListener(OnClick_Settings);
     }
 
@@ -49,6 +50,8 @@ public class LobbyWindow : UIElement
 
     public override void OnRefresh()
     {
+        Img_Character.sprite = ResourceLoader.LoadAssetResources<Sprite>($"Image/Character/Character_Sample{User.UserCommonData.ImageNum}");
+        Text_Gold.text = User.UserGameData.Gold.ToString();
     }
     #endregion
 
@@ -64,12 +67,24 @@ public class LobbyWindow : UIElement
 
     private void OnClick_GoldAdd()
     {
-        // TODO
+        UIManager.Instance.Open<Popup_Shop>(UI.Popup, "Prefabs/UI/Popup/Popup_Shop");
+
+        // 골드 획득 치트
+        if (Util.IsEditor())
+        {
+            var Head = Util.MakeHeaderData(UserContents.GoldCheat);
+            NetworkManager.Instance.SendContentsPacket(ContentsType.User, Head);
+        }
     }
 
     private void OnClick_Numbers()
     {
         UIManager.Instance.Open<Popup_MyNumbers>(UI.Popup, "Prefabs/UI/Popup/Popup_MyNumbers");
+    }
+
+    private void OnClick_Shop()
+    {
+        UIManager.Instance.Open<Popup_Shop>(UI.Popup, "Prefabs/UI/Popup/Popup_Shop");
     }
 
     private void OnClick_Settings()

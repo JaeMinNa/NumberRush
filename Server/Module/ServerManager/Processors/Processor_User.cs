@@ -60,6 +60,21 @@ namespace GameServer.Module.ServerManager.Processors
                         result = await ServerUtil.MakePacket(packetData.contentsType, outHeaderData, outBodyData);
                         return new Tuple<PacketState, string>(packetState, result);
                     }
+
+                case UserContents.GoldCheat:
+                    {
+                        var userGameData = await GameMethod.GetUserGameData(accountCode);
+
+                        userGameData.Gold += 1000000;
+
+                        var updateUserGameData = await GameMethod.ProcessUserGameData(accountCode, userGameData);
+                        outBodyData.Add(updateUserGameData.Item1);
+                        outLogData.Add(updateUserGameData.Item2);
+
+                        outHeaderData = ServerUtil.MakeHeaderData(UserContents.GoldCheat, true);
+                        result = await ServerUtil.MakePacket(packetData.contentsType, outHeaderData, outBodyData);
+                        return new Tuple<PacketState, string>(packetState, result);
+                    }
             }
 
             packetState = PacketState.UnknownPacket;

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public partial class PacketSystem
@@ -27,6 +28,19 @@ public partial class PacketSystem
                     if (Success)
                     { 
 
+                    }
+                }
+                break;
+
+            case UserNumberContents.BuyOneNumber_Random:
+            case UserNumberContents.BuyTenNumber_Random:
+            case UserNumberContents.BuyOneNumber_Select:
+                {
+                    if (Success)
+                    {
+                        List<int> numbers = Util.ToObjectJson<List<int>>(Data);
+
+                        UIManager.Instance.Open<Popup_ShopResult>(UI.Popup, "Prefabs/UI/Popup/Popup_ShopResult", new List<object> { numbers });
                     }
                 }
                 break;

@@ -94,8 +94,7 @@ public class Popup_MyNumbers : UIElement
     {
         int equipCount = User.UserNumberData.EquipNumber.Count;
 
-        Text_EquipNumbersCount.text =
-            $"{equipCount} <color=#c6e4fd>/ 5</color>";
+        Text_EquipNumbersCount.text = $"{equipCount} <color=#c6e4fd>/ 5</color>";
 
         for (int i = 0; i < m_EquipSlots.Count; ++i)
         {

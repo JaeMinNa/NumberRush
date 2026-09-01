@@ -28,6 +28,7 @@ public enum UserContents
 
     ChangeNickName,
     GetData,
+    GoldCheat,
 
     Max
 }
@@ -38,6 +39,9 @@ public enum UserNumberContents
 
     SetInventory,
     SetEquip,
+    BuyOneNumber_Random,
+    BuyTenNumber_Random,
+    BuyOneNumber_Select,
 
     Max
 }
