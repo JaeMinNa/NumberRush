@@ -65,6 +65,12 @@ public partial class PacketSystem
                                 }
                                 break;
 
+                            case eUserData_Common.ImageNum:
+                                {
+                                    User.UserCommonData.ImageNum = data;
+                                }
+                                break;
+
                             case eUserData_Common.Max:
                                 {
                                     User.UserCommonData = Util.ToObjectJson<UserData_Common>(data);

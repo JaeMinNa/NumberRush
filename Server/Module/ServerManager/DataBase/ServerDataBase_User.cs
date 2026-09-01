@@ -39,7 +39,10 @@ namespace GameServer.Module.ServerManager.DataBase
                     case eUserData_Common.AccountCode:
                         return default;
 
-                    case eUserData_Common.Max:
+                    case eUserData_Common.UID:
+                        return default;
+
+                    case eUserData_Common.ImageNum:
                         return default;
 
                     default:

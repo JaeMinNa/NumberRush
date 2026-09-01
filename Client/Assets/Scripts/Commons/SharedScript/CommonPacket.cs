@@ -39,6 +39,9 @@ public enum UserNumberContents
 {
     None,
 
+    SetInventory,
+    SetEquip,
+
     Max
 }
 

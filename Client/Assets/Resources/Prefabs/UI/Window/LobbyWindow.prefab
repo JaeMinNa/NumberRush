@@ -11897,7 +11897,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 4
+  m_text: '999
+
+'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 77aa30ca08fdd4cdd8ec6436a3af94ac, type: 2}
   m_sharedMaterial: {fileID: -4509379148335439522, guid: 77aa30ca08fdd4cdd8ec6436a3af94ac, type: 2}
@@ -11924,7 +11926,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 30.3
+  m_fontSize: 25.8
   m_fontSizeBase: 14
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -12478,7 +12480,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -1.8, y: -0.49999}
-  m_SizeDelta: {x: 128, y: 256}
+  m_SizeDelta: {x: 128, y: 130}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5150700375013666557
 CanvasRenderer:
@@ -12508,7 +12510,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: aa7490e2347964b2d992a69a1fcb763a, type: 3}
+  m_Sprite: {fileID: 21300000, guid: ccc9f2bec4bb243d1983d33aaaa83285, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -12531,7 +12533,7 @@ GameObject:
   - component: {fileID: 5150700375063546662}
   - component: {fileID: 5150700375063546660}
   m_Layer: 5
-  m_Name: Button_Items
+  m_Name: Button_Numbers
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -13441,7 +13443,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: ITEMS
+  m_text: NUMBERS
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 77aa30ca08fdd4cdd8ec6436a3af94ac, type: 2}
   m_sharedMaterial: {fileID: -4509379148335439522, guid: 77aa30ca08fdd4cdd8ec6436a3af94ac, type: 2}
@@ -14783,6 +14785,15 @@ MonoBehaviour:
   UIName: 
   RectTransform: {fileID: 0}
   UIParent: 0
+  Img_Character: {fileID: 5150700375013666558}
+  Text_Score: {fileID: 1644768969760646660}
+  Text_Level: {fileID: 5150700374917903111}
+  Text_Gold: {fileID: 8350346171599437517}
+  Btn_GoldAdd: {fileID: 1903369791706432887}
+  Btn_Numbers: {fileID: 5150700375063546660}
+  Btn_Shop: {fileID: 5150700376478628564}
+  Btn_Ranking: {fileID: 5150700376615428952}
+  Btn_Settings: {fileID: 5150700374972195234}
   Btn_GameStart: {fileID: 5150700375631806130}
 --- !u!1 &5150700376002382247
 GameObject:

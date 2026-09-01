@@ -10,29 +10,26 @@ public partial class PacketSystem
 
         switch (Type)
         {
-            //case UserContents.ChangeNickName:
-            //    {
-            //        if (Success)
-            //        {
-            //            //var Datas = Data.Split("#");
-            //            //var MyInviteRank = Util.ToObjectJson<InviteRankInfo>(Datas[0]);
-            //            //var InviteRankList = Util.ToObjectJson<List<InviteRankInfo>>(Datas[1]);
-            //            //UIManager.Instance.Open<Popup_Friend_Event>(UI.Popup, "UI/Popup/Popup_Friend_Event", new List<object>() { MyInviteRank, InviteRankList });
+            case UserNumberContents.SetEquip:
+                {
+                    if (Success)
+                    {
+                        //var Datas = Data.Split("#");
+                        //var MyInviteRank = Util.ToObjectJson<InviteRankInfo>(Datas[0]);
+                        //var InviteRankList = Util.ToObjectJson<List<InviteRankInfo>>(Datas[1]);
+                        //UIManager.Instance.Open<Popup_Friend_Event>(UI.Popup, "UI/Popup/Popup_Friend_Event", new List<object>() { MyInviteRank, InviteRankList });
+                    }
+                }
+                break;
 
-            //            Debug.LogWarning($"NickName 변경 성공! : {User.UserCommonData.NickName}, UID : {User.UserCommonData.UID}, AccountCode : {User.UserCommonData.AccountCode}");
-            //        }
-            //    }
-            //    break;
+            case UserNumberContents.SetInventory:
+                {
+                    if (Success)
+                    { 
 
-            //case UserContents.GetData:
-            //    {
-            //        if (Success)
-            //        {
-            //            string Notice = Data;
-            //            Debug.LogWarning(Notice);
-            //        }
-            //    }
-            //    break;
+                    }
+                }
+                break;
 
             default:
                 break;

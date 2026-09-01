@@ -11,6 +11,7 @@ namespace GameServer.Module.ServerManager.Contents
             uInfo.AccountCode = accountCode;
             uInfo.UID = ObjectId.GenerateNewId().ToString();
             uInfo.NickName = ObjectId.GenerateNewId().ToString();
+            uInfo.ImageNum = "01";
 
             await ServerDataBase.SetUserCommonData(accountCode, uInfo);
             return uInfo;
@@ -36,6 +37,12 @@ namespace GameServer.Module.ServerManager.Contents
                         break;
 
                     case eUserData_Common.AccountCode:
+                        break;
+
+                    case eUserData_Common.UID:
+                        break;
+
+                    case eUserData_Common.ImageNum:
                         break;
 
                     default:

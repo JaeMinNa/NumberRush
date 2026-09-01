@@ -59,6 +59,15 @@ public enum BlockType
     Ghost = 1 << 3,  // 8
 }
 
+public enum SlotType
+{
+    Normal,
+    Add,
+    Lock,
+    Select,
+    Equip,
+}
+
 public enum eItemType
 {
     None,

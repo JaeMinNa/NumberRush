@@ -237,6 +237,9 @@ public class GameManager : Singleton<GameManager>
 
                 // 유저 숫자 데이터
                 case nameof(UserData_Number): User.SetUserNumberData(Util.ToObjectJson<UserData_Number>(Datas[1])); break;
+
+                // 유저 숫자 데이터
+                case nameof(UserData_Game): User.SetUserGameData(Util.ToObjectJson<UserData_Game>(Datas[1])); break;
             }
         }
     }
