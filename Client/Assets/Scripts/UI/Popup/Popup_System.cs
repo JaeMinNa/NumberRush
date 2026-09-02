@@ -40,7 +40,7 @@ public class Popup_System : UIElement
         }
         else
         {
-            Text_Title.text = "Notice";
+            Text_Title.text = "NOTICE";
         }
 
         Text_Message.text = MyData.Message;

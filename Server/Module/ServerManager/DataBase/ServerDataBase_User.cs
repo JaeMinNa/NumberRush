@@ -1,7 +1,9 @@
+using GameServer.Module.ServerManager.Contents;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using System.Text.Json;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace GameServer.Module.ServerManager.DataBase
 {
@@ -98,61 +100,113 @@ namespace GameServer.Module.ServerManager.DataBase
             return nickNameData == null;
         }
 
-        //public static async Task<List<CommonRankInfo>> GetUserCommonRankInfo()
-        //{
-        //    var AllCommonList = await UserDB.GetCollection<UserData_Common>(nameof(UserCollection.UserCommonData)).Find(Builders<UserData_Common>.Filter.Empty).ToListAsync();
-        //    var CommonList = AllCommonList.Where(Data => Data.PartyCombatPower > 0).OrderByDescending(Data => Data.PartyCombatPower).ThenByDescending(Data => Data.LastReinforceTime).ToList();
-        //    int Range = CommonList.Count < 100 ? CommonList.Count : 100;
-        //    var CommonListTop = CommonList.GetRange(0, Range);
+        public static async Task<List<UserRankInfo>> GetUsersRankInfo()
+        {
+            // 전체 유저 기본 정보 가져오기
+            var commonList = await UserDB.GetCollection<UserData_Common>(nameof(UserCollection.UserCommonData)).Find(Builders<UserData_Common>.Filter.Empty).ToListAsync();
 
-        //    List<CommonRankInfo> Result = new List<CommonRankInfo>();
+            // 랭킹 계산용 리스트
+            var rankList = new List<(UserData_Common CommonData, int Score, float Time)>();
 
-        //    for (int count = 0; count < CommonListTop.Count; count++)
-        //    {
-        //        CommonRankInfo Data = new CommonRankInfo();
-        //        Data.Rank = count + 1;                
-        //        Data.NickName = CommonListTop[count].NickName;
-        //        Data.ProfileCharcater = CommonListTop[count].ProfileCharacter;
-        //        Data.ProfileSkin = CommonListTop[count].ProfileSkin;
-        //        Data.PartyCombatPower = CommonListTop[count].PartyCombatPower;
-        //        Data.Lv = CommonListTop[count].AccountLevel;
-        //        Data.Exp = CommonListTop[count].AccountExp;
-        //        Data.CountryCode = CommonListTop[count].CountryCode;
+            foreach (var commonData in commonList)
+            {
+                // 해당 유저의 게임 데이터 가져오기
+                var gameData = await GameMethod.GetUserGameData(commonData.AccountCode);
 
-        //        Result.Add(Data);
-        //    }
-        //    return Result;
-        //}
+                if (gameData == null)
+                    continue;
 
-        //public static async Task<CommonRankInfo> GetUserCommonRank(string AccountCode)
-        //{
-        //    var List = await UserDB.GetCollection<UserData_Common>(nameof(UserCollection.UserCommonData)).Find(Builders<UserData_Common>.Filter.Empty).Limit(0).ToListAsync();
-        //    var RankList = List.Where(Data => Data.PartyCombatPower != 0).OrderByDescending(Data => Data.PartyCombatPower).ThenByDescending(Data => Data.LastReinforceTime).ToList();
+                rankList.Add((commonData, gameData.Score, gameData.Time));
+            }
 
-        //    int Rank = RankList.FindIndex(Data => Data.AccountCode == AccountCode);
+            // Score 높은 순서, Time 높은 순서로 정렬
+            var sortedList = rankList.OrderByDescending(data => data.Score).ThenByDescending(data => data.Time).Take(50).ToList();
 
-        //    CommonRankInfo RankInfo = new CommonRankInfo();
-        //    if(Rank == -1)
-        //    {
-        //        RankInfo.Rank = -1;
-        //        RankInfo.PartyCombatPower = 0;
-        //    }
-        //    else
-        //    {
-        //        RankInfo.Rank = Rank + 1;
-        //        RankInfo.PartyCombatPower = RankList[Rank].PartyCombatPower;
-        //    }
+            var result = new List<UserRankInfo>();
+            for (int i = 0; i < sortedList.Count; i++)
+            {
+                var data = sortedList[i];
 
-        //    var UserCommonData = await UserMethod.GetUserCommonData(AccountCode);
-        //    RankInfo.NickName = UserCommonData.NickName;
-        //    RankInfo.ProfileCharcater = UserCommonData.ProfileCharacter;
-        //    RankInfo.ProfileSkin = UserCommonData.ProfileSkin;
-        //    RankInfo.Lv = UserCommonData.AccountLevel;
-        //    RankInfo.Exp = UserCommonData.AccountExp;
-        //    RankInfo.CountryCode = UserCommonData.CountryCode;
+                UserRankInfo rankInfo = new UserRankInfo();
 
-        //    return RankInfo;
-        //}
+                rankInfo.Rank = i + 1;
+                rankInfo.NickName = data.CommonData.NickName;
+                rankInfo.Score = data.Score;
+                rankInfo.Time = data.Time;
+                rankInfo.ImageNum = data.CommonData.ImageNum;
+
+                // 유저의 Number 데이터
+                var userNumberData = await NumberMethod.GetUserNumberData(data.CommonData.AccountCode);
+                if (userNumberData != null)
+                    rankInfo.EquipNumber = userNumberData.EquipNumber;
+
+                result.Add(rankInfo);
+            }
+
+            return result;
+        }
+
+        public static async Task<UserRankInfo> GetUserRankInfo(string accountCode)
+        {
+            // 전체 유저 기본 정보 가져오기
+            var commonList = await UserDB.GetCollection<UserData_Common>(nameof(UserCollection.UserCommonData)).Find(Builders<UserData_Common>.Filter.Empty).ToListAsync();
+
+            // 랭킹 계산용 리스트
+            var rankList = new List<(UserData_Common CommonData, int Score, float Time)>();
+
+            foreach (var commonData in commonList)
+            {
+                // 게임 데이터 가져오기
+                var gameData = await GameMethod.GetUserGameData(commonData.AccountCode);
+
+                if (gameData == null)
+                    continue;
+
+                rankList.Add((commonData, gameData.Score, gameData.Time));
+            }
+
+            // Score 높은 순, Time 높은 순으로 정렬
+            var sortedList = rankList.OrderByDescending(data => data.Score).ThenByDescending(data => data.Time).ToList();
+
+            // 해당 유저 위치 검색
+            int rank = sortedList.FindIndex(data => data.CommonData.AccountCode == accountCode);
+
+            UserRankInfo rankInfo = new UserRankInfo();
+
+            // 유저 기본 데이터
+            var userCommonData = await GetUserCommonData(accountCode);
+            if (userCommonData != null)
+            {
+                rankInfo.NickName = userCommonData.NickName;
+                rankInfo.ImageNum = userCommonData.ImageNum;
+            }
+
+            // 유저의 Number 데이터
+            var userNumberData = await NumberMethod.GetUserNumberData(accountCode);
+            if (userNumberData != null)
+            {
+                rankInfo.EquipNumber = userNumberData.EquipNumber;
+            }
+
+            // 랭킹에 없는 경우
+            if (rank == -1)
+            {
+                rankInfo.Rank = -1;
+
+                var userGameData = await GameMethod.GetUserGameData(accountCode);
+                rankInfo.Score = userGameData != null ? userGameData.Score : 0;
+                rankInfo.Time = userGameData != null ? userGameData.Time : 0f;
+            }
+            // 랭킹에 있는 경우
+            else
+            {
+                rankInfo.Rank = rank + 1;
+                rankInfo.Score = sortedList[rank].Score;
+                rankInfo.Time = sortedList[rank].Time;
+            }
+
+            return rankInfo;
+        }
 
         public static async Task<int> GetUserTotalCount()
         {

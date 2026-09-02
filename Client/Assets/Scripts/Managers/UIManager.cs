@@ -369,7 +369,7 @@ public class UIManager : Singleton<UIManager>
 
     public void OpenSystemPopup(MessageData Data)
     {
-        Open<Popup_System>(UI.Popup, "Prefab/UI/Popup/Popup_System", new List<object> { Data }, IsBundle: false);
+        Open<Popup_System>(UI.Popup, "Prefabs/UI/Popup/Popup_System", new List<object> { Data }, IsBundle: false);
     }
 
     //public async UniTask OpenPurchasePopup(List<object> Args)

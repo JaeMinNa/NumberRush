@@ -1,3 +1,6 @@
+using NUnit.Framework;
+using System.Collections.Generic;
+
 enum DataBaseKey
 {
     User,
@@ -22,4 +25,15 @@ public enum UserCollection
     UserGameData,           // 유저 게임 데이터
 
     Max
+}
+
+// 랭크 데이터
+public class UserRankInfo
+{
+    public int Rank = 0;
+    public string NickName = string.Empty;
+    public int Score = 0;
+    public float Time = 0f;
+    public List<int> EquipNumber = new List<int>();
+    public string ImageNum = string.Empty;
 }

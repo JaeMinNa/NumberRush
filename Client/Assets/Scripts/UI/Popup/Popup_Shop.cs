@@ -45,7 +45,10 @@ public class Popup_Shop : UIElement
     private void OnClick_BuyOneNumber_Random()
     {
         if (User.UserGameData.Gold < 2000)
+        {
             UIManager.Instance.OpenSystemPopup(new MessageData { Type = PopupType.OkOnly, Message = "You don't have enough Gold." });
+            return;
+        }
 
         var Head = Util.MakeHeaderData(UserNumberContents.BuyOneNumber_Random);
         NetworkManager.Instance.SendContentsPacket(ContentsType.UserNumber, Head);
@@ -54,7 +57,10 @@ public class Popup_Shop : UIElement
     private void OnClick_BuyTenNumber_Random()
     {
         if (User.UserGameData.Gold < 18000)
+        {
             UIManager.Instance.OpenSystemPopup(new MessageData { Type = PopupType.OkOnly, Message = "You don't have enough Gold." });
+            return;
+        }
 
         var Head = Util.MakeHeaderData(UserNumberContents.BuyTenNumber_Random);
         NetworkManager.Instance.SendContentsPacket(ContentsType.UserNumber, Head);
@@ -63,7 +69,10 @@ public class Popup_Shop : UIElement
     private void OnClick_BuyTenNumber_Select(int num)
     {
         if (User.UserGameData.Gold < 100000)
+        {
             UIManager.Instance.OpenSystemPopup(new MessageData { Type = PopupType.OkOnly, Message = "You don't have enough Gold." });
+            return;
+        }
 
         var Head = Util.MakeHeaderData(UserNumberContents.BuyOneNumber_Select, num.ToString());
         NetworkManager.Instance.SendContentsPacket(ContentsType.UserNumber, Head);

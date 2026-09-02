@@ -10,7 +10,7 @@ namespace GameServer.Module.ServerManager.Contents
             UserData_Common uInfo = new UserData_Common();
             uInfo.AccountCode = accountCode;
             uInfo.UID = ObjectId.GenerateNewId().ToString();
-            uInfo.NickName = ObjectId.GenerateNewId().ToString();
+            uInfo.NickName = ObjectId.GenerateNewId().ToString()[..8];  // 8글자 제한
             uInfo.ImageNum = "01";
 
             await ServerDataBase.SetUserCommonData(accountCode, uInfo);
@@ -171,15 +171,15 @@ namespace GameServer.Module.ServerManager.Contents
             return await ServerDataBase.CheckNickName(nickName);
         }
 
-        //public static async Task<List<CommonRankInfo>> GetUserCommonRankInfo()
-        //{
-        //    return await ServerDataBase.GetUserCommonRankInfo();
-        //}
+        public static async Task<List<UserRankInfo>> GetUsersRankInfo()
+        {
+            return await ServerDataBase.GetUsersRankInfo();
+        }
 
-        //public static async Task<CommonRankInfo> GetUserCommonRank(string AccountCode)
-        //{
-        //    return await ServerDataBase.GetUserCommonRank(AccountCode);
-        //}
+        public static async Task<UserRankInfo> GetUserRankInfo(string AccountCode)
+        {
+            return await ServerDataBase.GetUserRankInfo(AccountCode);
+        }
 
         public static async Task<int> GetUserTotalCount()
         {

@@ -52,6 +52,22 @@ namespace GameServer.Module.ServerManager.Processors
                         return new Tuple<PacketState, string>(packetState, result);
                     }
 
+                case UserContents.ChangeImageNumber:
+                    {
+                        string newImageNum = packetData.HeaderData.Data;
+
+                        var userCommonData = await UserMethod.GetUserCommonData(accountCode);
+                        userCommonData.ImageNum = newImageNum;
+
+                        var updateUserCommonData = await UserMethod.ProcessUserCommonData(accountCode, userCommonData);
+                        outBodyData.Add(updateUserCommonData.Item1);
+                        outLogData.Add(updateUserCommonData.Item2);
+
+                        outHeaderData = ServerUtil.MakeHeaderData(UserContents.ChangeImageNumber, true);
+                        result = await ServerUtil.MakePacket(packetData.contentsType, outHeaderData, outBodyData);
+                        return new Tuple<PacketState, string>(packetState, result);
+                    }
+
                 case UserContents.GetData:
                     {
                         var userCommonData = await UserMethod.GetUserCommonData(accountCode);
@@ -72,6 +88,23 @@ namespace GameServer.Module.ServerManager.Processors
                         outLogData.Add(updateUserGameData.Item2);
 
                         outHeaderData = ServerUtil.MakeHeaderData(UserContents.GoldCheat, true);
+                        result = await ServerUtil.MakePacket(packetData.contentsType, outHeaderData, outBodyData);
+                        return new Tuple<PacketState, string>(packetState, result);
+                    }
+
+                case UserContents.GetRankData:
+                    {
+                        // 나의 랭킹 데이터
+                        var myRankInfo = await UserMethod.GetUserRankInfo(accountCode);
+                        if (myRankInfo == null)
+                            return await errorResponse.SetCode(0).BuildAsync();
+
+                        // 유저 랭킹 데이터
+                        var usersRankInfo = await UserMethod.GetUsersRankInfo();
+                        if (usersRankInfo == null)
+                            return await errorResponse.SetCode(1).BuildAsync();
+
+                        outHeaderData = ServerUtil.MakeHeaderData(UserContents.GetRankData, true, ServerUtil.MakeData(ServerUtil.ToJson(myRankInfo), ServerUtil.ToJson(usersRankInfo)));
                         result = await ServerUtil.MakePacket(packetData.contentsType, outHeaderData, outBodyData);
                         return new Tuple<PacketState, string>(packetState, result);
                     }

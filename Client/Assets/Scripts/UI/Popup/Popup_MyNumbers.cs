@@ -104,10 +104,7 @@ public class Popup_MyNumbers : UIElement
             {
                 int num = User.UserNumberData.EquipNumber[i];
 
-                slot.SetSlot(
-                    SlotType.Normal,
-                    num,
-                    () => OnClick_EquipSlot(SlotType.Normal, num)
+                slot.SetSlot(SlotType.Select, num, () => OnClick_EquipSlot(SlotType.Normal, num)
                 );
             }
             else
@@ -146,10 +143,7 @@ public class Popup_MyNumbers : UIElement
             // Inven Number
             if (numberInven.Contains(num))
             {
-                slot.SetSlot(
-                    SlotType.Normal,
-                    num,
-                    () => OnClick_InvenSlot(SlotType.Normal, num)
+                slot.SetSlot(SlotType.Normal, num, () => OnClick_InvenSlot(SlotType.Normal, num)
                 );
 
                 continue;

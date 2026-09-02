@@ -30,8 +30,10 @@ public enum UserContents
     None,
 
     ChangeNickName,
+    ChangeImageNumber,
     GetData,
     GoldCheat,
+    GetRankData,
 
     Max
 }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public partial class PacketSystem
@@ -14,12 +15,20 @@ public partial class PacketSystem
                 {
                     if (Success)
                     {
-                        //var Datas = Data.Split("#");
-                        //var MyInviteRank = Util.ToObjectJson<InviteRankInfo>(Datas[0]);
-                        //var InviteRankList = Util.ToObjectJson<List<InviteRankInfo>>(Datas[1]);
-                        //UIManager.Instance.Open<Popup_Friend_Event>(UI.Popup, "UI/Popup/Popup_Friend_Event", new List<object>() { MyInviteRank, InviteRankList });
+                        UIManager.Instance.OpenSystemPopup(new MessageData { Type = PopupType.OkOnly, Message = "Success to change nickname." });
+                    }
+                    else
+                    {
+                        UIManager.Instance.OpenSystemPopup(new MessageData { Type = PopupType.OkOnly, Message = "Fail to change nicknaem." });
+                    }
+                }
+                break;
 
-                        Debug.LogWarning($"NickName 변경 성공! : {User.UserCommonData.NickName}, UID : {User.UserCommonData.UID}, AccountCode : {User.UserCommonData.AccountCode}");
+            case UserContents.ChangeImageNumber:
+                {
+                    if (Success)
+                    {
+                        
                     }
                 }
                 break;
@@ -39,6 +48,19 @@ public partial class PacketSystem
                     if (Success)
                     {
                         
+                    }
+                }
+                break;
+
+            case UserContents.GetRankData:
+                {
+                    if (Success)
+                    {
+                        var datas = Data.Split("#");
+                        var myRankInfo = Util.ToObjectJson<UserRankInfo>(datas[0]);
+                        var usersRankInfo = Util.ToObjectJson<List<UserRankInfo>>(datas[1]);
+
+                        UIManager.Instance.Open<Popup_Ranking>(UI.Popup, "Prefabs/UI/Popup/Popup_Ranking", new List<object>() { myRankInfo, usersRankInfo });
                     }
                 }
                 break;
