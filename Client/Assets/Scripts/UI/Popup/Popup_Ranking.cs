@@ -113,6 +113,8 @@ public class Popup_Ranking : UIElement
     #region Button Event
     private void OnClick_Close()
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         UIManager.Instance.Close<Popup_Ranking>();
     }
     #endregion

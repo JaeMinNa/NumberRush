@@ -75,6 +75,8 @@ public class Popup_UserInfo : UIElement
         if (num < 1 || num > 6)
             return;
 
+        SoundManager.Instance.StartSFX("ClickButton");
+
         string newImageNum = $"0{num}";
 
         var Head = Util.MakeHeaderData(UserContents.ChangeImageNumber, newImageNum);
@@ -83,11 +85,15 @@ public class Popup_UserInfo : UIElement
 
     private void OnClick_ChangeNickName()
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         UIManager.Instance.Open<Popup_ChangeNickName>(UI.Popup, "Prefabs/UI/Popup/Popup_ChangeNickName");
     }
 
     private void OnClick_Close()
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         UIManager.Instance.Close<Popup_UserInfo>();
     }
     #endregion

@@ -52,12 +52,16 @@ public class Popup_ChangeNickName : UIElement
     #region Button Event
     private void Onclick_ChangeNickName()
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         var Head = Util.MakeHeaderData(UserContents.ChangeNickName, Text_NewNickName.text);
         NetworkManager.Instance.SendContentsPacket(ContentsType.User, Head);
     }
 
     private void OnClick_Close()
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         UIManager.Instance.Close<Popup_ChangeNickName>();
     }
     #endregion

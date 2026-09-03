@@ -46,6 +46,8 @@ public class Popup_Shop : UIElement
     {
         if (User.UserGameData.Gold < 2000)
         {
+            SoundManager.Instance.StartSFX("ClickButton");
+
             UIManager.Instance.OpenSystemPopup(new MessageData { Type = PopupType.OkOnly, Message = "You don't have enough Gold." });
             return;
         }
@@ -58,6 +60,8 @@ public class Popup_Shop : UIElement
     {
         if (User.UserGameData.Gold < 18000)
         {
+            SoundManager.Instance.StartSFX("ClickButton");
+
             UIManager.Instance.OpenSystemPopup(new MessageData { Type = PopupType.OkOnly, Message = "You don't have enough Gold." });
             return;
         }
@@ -70,6 +74,8 @@ public class Popup_Shop : UIElement
     {
         if (User.UserGameData.Gold < 100000)
         {
+            SoundManager.Instance.StartSFX("ClickButton");
+
             UIManager.Instance.OpenSystemPopup(new MessageData { Type = PopupType.OkOnly, Message = "You don't have enough Gold." });
             return;
         }
@@ -80,6 +86,8 @@ public class Popup_Shop : UIElement
 
     private void OnClick_Close()
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         UIManager.Instance.Close<Popup_Shop>();
     }
     #endregion

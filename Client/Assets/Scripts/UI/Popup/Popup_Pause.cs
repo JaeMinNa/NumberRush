@@ -44,11 +44,15 @@ public class Popup_Pause : UIElement
     #region Button Event
     private void OnClick_Continue()
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         UIManager.Instance.Close<Popup_Pause>();
     }
 
     private void OnClick_Quit()
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         m_BattleModule.EndGame();
         UIManager.Instance.Close<Popup_System>();
         GameManager.Instance.LoadLobbyScenen();

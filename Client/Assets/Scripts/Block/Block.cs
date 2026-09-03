@@ -3,13 +3,6 @@ using TMPro;
 
 public class Block : MonoBehaviour
 {
-    [Header("Setting")]
-    [SerializeField] private float DownSpeed = 1.0f;
-    [SerializeField] private float HorizontalSpeed = 1.5f;
-    [SerializeField] private float RotationSpeed = 100.0f;
-    [SerializeField] private float GhostInterval = 0.5f;
-    [SerializeField] private float ArmorScale = 1.5f;
-
     [Header("Text")]
     [SerializeField] private TextMeshPro NumberText = null;
 
@@ -187,39 +180,43 @@ public class Block : MonoBehaviour
     // 기본적으로 모두 아래로 이동
     private void MoveDown()
     {
-        transform.position += Vector3.down * DownSpeed * Time.deltaTime;
+        if (m_ChapterModule == null)
+            return;
+
+        transform.position += Vector3.down  * m_ChapterModule.GetBlockDownSpeed() * Time.deltaTime;
     }
 
     private void SetRotationBlock()
     {
         // 좌/우 랜덤 회전
-        m_RotationDirection = RandomUtil.GetRandomIndex(0, 1) < 0 ? -1 : 1;
+        m_RotationDirection = RandomUtil.GetRandomIndex(0, 1) == 0 ? -1 : 1;
     }
 
     private void UpdateRotation()
     {
-        transform.Rotate(0.0f, 0.0f, RotationSpeed * m_RotationDirection * Time.deltaTime);
+        transform.Rotate(0.0f, 0.0f, m_ChapterModule.GetBlockRotationSpeed() * m_RotationDirection * Time.deltaTime);
     }
 
     private void SetMoveBlock()
     {
         // 처음 이동 방향 좌/우 랜덤
-        m_MoveDirection = RandomUtil.GetRandomIndex(0, 1) < 0 ? -1 : 1;
+        m_MoveDirection = RandomUtil.GetRandomIndex(0, 1) == 0 ? -1 : 1;
     }
 
     private void UpdateMove()
     {
+        if (m_ChapterModule == null)
+            return;
+
         Vector3 position = transform.position;
 
-        position.x += HorizontalSpeed * m_MoveDirection * Time.deltaTime;
+        position.x += m_ChapterModule.GetBlockHorizonSpeed() * m_MoveDirection * Time.deltaTime;
 
-        // 오른쪽 끝 도착
         if (position.x >= ClientDef.BLOCK_MOVE_X)
         {
             position.x = ClientDef.BLOCK_MOVE_X;
             m_MoveDirection = -1;
         }
-        // 왼쪽 끝 도착
         else if (position.x <= -ClientDef.BLOCK_MOVE_X)
         {
             position.x = -ClientDef.BLOCK_MOVE_X;
@@ -265,7 +262,7 @@ public class Block : MonoBehaviour
 
         m_GhostTimer += Time.deltaTime;
 
-        if (m_GhostTimer >= GhostInterval)
+        if (m_GhostTimer >= ClientDef.GHOSTBLOCK_INTERVAL)
         {
             m_GhostTimer = 0.0f;
 

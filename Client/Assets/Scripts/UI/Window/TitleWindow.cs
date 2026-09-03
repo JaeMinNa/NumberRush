@@ -30,6 +30,8 @@ public class TitleWindow : UIElement
 
     public override void OnOpen(List<object> args)
     {
+        SoundManager.Instance.StartBGM("BGM_Title");
+
         SetLogin();
     }
 
@@ -70,6 +72,8 @@ public class TitleWindow : UIElement
 
     private async void OnClick_EditorLogin()
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         GameManager.Instance.AccountCode = Text_InputFieldAccount.text;
         NetworkManager.Instance.SendPacket(PacketType.GetUserData, receiveAction : EnterLobbyScene);
     }

@@ -15,54 +15,34 @@ public class IngameWindow : UIElement
     [SerializeField] private Button Btn_Pause = null;
 
     [Header("Formula")]
+    [SerializeField] private RectTransform Rect_Formula = null;
     [SerializeField] private TMP_Text[] Text_FormulaSlots = null;
     [SerializeField] private Button Btn_Skip = null;
     [SerializeField] private TMP_Text Text_SkipCount = null;
 
     [Header("Calculator")]
-    [SerializeField] private Button[] Btn_NormalNumbers = null;
-    [SerializeField] private Button[] Btn_EquipNumbers = null;
+    [SerializeField] private Transform Trans_Content_Normal_Up = null;
+    [SerializeField] private Transform Trans_Content_Normal_Down = null;
+    [SerializeField] private Transform Trans_Content_Equip = null;
     [SerializeField] private Button Btn_Clear = null;
     [SerializeField] private Button Btn_Equal = null;
     #endregion
 
     #region Member Property
     private ChapterModule m_ChapterModule = null;
+    private GameObject m_SlotNumberObj = null;
     #endregion
 
     #region Override Method
     public override void Init()
     {
-        // 초기화
         if (m_ChapterModule == null)
             m_ChapterModule = BattleModule.Instance as ChapterModule;
 
-        // Normal 버튼 연결
-        for (int i = 0; i < Btn_NormalNumbers.Length; ++i)
-        {
-            int number = i + 1;
-            Btn_NormalNumbers[i].onClick.AddListener(() =>
-            {
-                OnClick_Number(number);
-            });
-        }
+        if (m_SlotNumberObj == null)
+            m_SlotNumberObj = ResourceLoader.LoadAssetResources<GameObject>("Prefabs/UI/Slot/Slot_Number");
 
-        // Equip 버튼 연결
-        for (int i = 0; i < Btn_EquipNumbers.Length; ++i)
-            Btn_EquipNumbers[i].gameObject.SetActive(false);
-
-
-        for (int i = 0; i < m_ChapterModule.EquipNumbers.Count; ++i)
-        {
-            int number = m_ChapterModule.EquipNumbers[i];
-            Btn_EquipNumbers[i].onClick.AddListener(() =>
-            {
-                OnClick_Number(number);
-            });
-
-            Btn_EquipNumbers[i].GetComponentInChildren<TextMeshProUGUI>().text = number.ToString();
-            Btn_EquipNumbers[i].gameObject.SetActive(true);
-        }
+        InitSlots();
 
         Btn_Skip.onClick.AddListener(OnClick_Skip);
         Btn_Clear.onClick.AddListener(OnClick_Clear);
@@ -72,6 +52,8 @@ public class IngameWindow : UIElement
 
     public override void OnOpen(List<object> args)
     {
+        SoundManager.Instance.StartBGM("BGM_Game");
+
         RefreshTopUI();
         RefreshFormula();
 
@@ -96,6 +78,8 @@ public class IngameWindow : UIElement
     #region Member Method
     private void OnClick_Number(int number)
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         m_ChapterModule.AddNumber(number);
 
         RefreshFormula();
@@ -105,7 +89,12 @@ public class IngameWindow : UIElement
     {
         // 스킵 개수 확인
         if (m_ChapterModule.SkipNowCount <= 0)
+        {
+            SoundManager.Instance.StartSFX("MissButton");
             return;
+        }
+
+        SoundManager.Instance.StartSFX("ClickButton");
 
         m_ChapterModule.SkipNowCount--;
 
@@ -115,6 +104,8 @@ public class IngameWindow : UIElement
 
     private void OnClick_Clear()
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         m_ChapterModule.ClearInputNumbers();
 
         RefreshFormula();
@@ -129,7 +120,36 @@ public class IngameWindow : UIElement
 
     private void OnClick_Pause()
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         m_ChapterModule.SetPause(true, true);
+    }
+
+    private void InitSlots()
+    {
+        // Normal Number
+        for (int i = 0; i < 4; ++i)
+        {
+            int number = i + 1;
+            GameObject slotObj = Instantiate(m_SlotNumberObj, Trans_Content_Normal_Up);
+            slotObj.GetComponent<Slot_Number>().SetSlot(SlotType.Normal, number, () => OnClick_Number(number));
+        }
+
+        for (int i = 0; i < 5; ++i)
+        {
+            int number = i + 5;
+            GameObject slotObj = Instantiate(m_SlotNumberObj, Trans_Content_Normal_Down);
+            slotObj.GetComponent<Slot_Number>().SetSlot(SlotType.Normal, number, () => OnClick_Number(number));
+        }
+
+        // Equip Number
+        for (int i = 0; i < User.UserNumberData.EquipNumber.Count; ++i)
+        {
+            int number = User.UserNumberData.EquipNumber[i];
+
+            GameObject slotObj = Instantiate(m_SlotNumberObj, Trans_Content_Equip);
+            slotObj.GetComponent<Slot_Number>().SetSlot(SlotType.Select, number, () => OnClick_Number(number));
+        }
     }
 
     private void RefreshFormula()
@@ -143,6 +163,26 @@ public class IngameWindow : UIElement
 
         // 연산자 개수에 따른 슬롯 개수
         int slotCount = (m_ChapterModule.OperatorCount * 2) + 1;
+
+        // 계산식 숫자 개수에 따른 Formula Width 설정
+        float formulaWidth = 350f;
+
+        switch (m_ChapterModule.OperatorCount + 1)
+        {
+            case 2:
+                formulaWidth = 350f;
+                break;
+
+            case 3:
+                formulaWidth = 550f;
+                break;
+
+            case 4:
+                formulaWidth = 760f;
+                break;
+        }
+
+        Rect_Formula.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, formulaWidth);
 
         // 슬롯 활성화
         for (int i = 0; i < slotCount; ++i)

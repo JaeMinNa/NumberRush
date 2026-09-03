@@ -48,10 +48,56 @@ public class ChapterModule : BattleModule
     public int SkipNowCount { get => m_SkipNowCount; set => m_SkipNowCount = value; }
     public int CurHp { get => m_Hp; set => m_Hp = value; }
     public int Score { get => m_Score; set => m_Score = value;  }
-    public int Gold { get => m_Score; set => m_Score = value; }
+    public int Gold { get => m_Gold; set => m_Gold = value; }
 
     public float CurTime { get => m_Time; }
     public List<int> EquipNumbers { get => m_EquipNumber; }
+
+    // 현재 난이도 비율 (0.0 ~ 1.0)
+    public float DifficultyRate
+    {
+        get
+        {
+            return Mathf.Clamp01(m_Time / ClientDef.GAME_MAX_DIFFICULTY_TIME);
+        }
+    }
+
+    // 현재 블록 하강 속도
+    public float GetBlockDownSpeed()
+    {
+        return Mathf.Lerp(
+            ClientDef.BLOCK_DEFAULTDOWNSPEED,
+            ClientDef.BLOCK_MAXDOWNSPEED,
+            DifficultyRate);
+    }
+
+    // 현재 블록 좌우 이동 속도
+    public float GetBlockHorizonSpeed()
+    {
+        return Mathf.Lerp(
+            ClientDef.BLOCK_DEFAULTHORIZONSPEED,
+            ClientDef.BLOCK_MAXHORIZONSPEED,
+            DifficultyRate);
+    }
+
+    // 현재 블록 회전 속도
+    public float GetBlockRotationSpeed()
+    {
+        return Mathf.Lerp(
+            ClientDef.BLOCK_DEFAULTROTATIONSPEED,
+            ClientDef.BLOCK_MAXROTATIONSPEED,
+            DifficultyRate);
+    }
+
+    // 현재 블록 최대 숫자
+    public int GetBlockMaxNumber()
+    {
+        return Mathf.RoundToInt(
+            Mathf.Lerp(
+                ClientDef.BLOCK_DEFAULTMAXNUM,
+                ClientDef.BLOCK_MAXNUM_LIMIT,
+                DifficultyRate));
+    }
     #endregion
 
     #region Overrid Method
@@ -101,21 +147,80 @@ public class ChapterModule : BattleModule
     public void SetFormula()
     {
         m_Operators.Clear();
-
         ClearInputNumbers();
 
-        int operatorCount = RandomUtil.GetRandomIndex(1, 3);
-
-        // 임시로 하나의 연산자만 선택
-        operatorCount = 1;
+        // 시간에 따른 연산자 개수 결정
+        int operatorCount = GetRandomOperatorCount();
 
         for (int i = 0; i < operatorCount; ++i)
         {
-            FormulaOperator randomOperator = (FormulaOperator)Random.Range(0, 4);
+            FormulaOperator randomOperator = (FormulaOperator)RandomUtil.GetRandomIndex(0, 3);
             m_Operators.Add(randomOperator);
         }
 
         DebugFormula();
+    }
+
+    private int GetRandomOperatorCount()
+    {
+        float randomValue = RandomUtil.GetRandomfloat(0f, 100f);
+
+        // 0 ~ 60초
+        // 숫자 2개 : 100%
+        if (m_Time < 60f)
+        {
+            return 1;
+        }
+
+        // 60 ~ 120초
+        // 숫자 2개 : 85%
+        // 숫자 3개 : 15%
+        if (m_Time < 120f)
+        {
+            return randomValue < 85f ? 1 : 2;
+        }
+
+        // 120 ~ 180초
+        // 숫자 2개 : 70%
+        // 숫자 3개 : 25%
+        // 숫자 4개 : 5%
+        if (m_Time < 180f)
+        {
+            if (randomValue < 70f)
+                return 1;
+
+            if (randomValue < 95f)
+                return 2;
+
+            return 3;
+        }
+
+        // 180 ~ 240초
+        // 숫자 2개 : 55%
+        // 숫자 3개 : 35%
+        // 숫자 4개 : 10%
+        if (m_Time < 240f)
+        {
+            if (randomValue < 55f)
+                return 1;
+
+            if (randomValue < 90f)
+                return 2;
+
+            return 3;
+        }
+
+        // 240초 이후
+        // 숫자 2개 : 40%
+        // 숫자 3개 : 40%
+        // 숫자 4개 : 20%
+        if (randomValue < 40f)
+            return 1;
+
+        if (randomValue < 80f)
+            return 2;
+
+        return 3;
     }
 
     public void AddNumber(int number)
@@ -138,6 +243,7 @@ public class ChapterModule : BattleModule
         // 숫자가 모두 입력되지 않았으면 아무것도 하지 않음
         if (m_InputNumbers.Count != m_RequiredNumberCount)
         {
+            SoundManager.Instance.StartSFX("MissButton");
             return;
         }
 
@@ -189,6 +295,8 @@ public class ChapterModule : BattleModule
         // 이미 GameOver라면 처리 안 함
         if (m_Hp <= 0)
             return;
+
+        SoundManager.Instance.StartSFX("DestroyLine");
 
         m_Hp--;
 
@@ -338,7 +446,12 @@ public class ChapterModule : BattleModule
     private void ResetBlockSpawnTime()
     {
         m_BlockSpawnTimer = 0f;
-        m_NextBlockSpawnTime = RandomUtil.GetRandomfloat(ClientDef.BLOCK_MINSPAWNTIME, ClientDef.BLOCK_MAXSPAWNTIME);
+
+        float minSpawnTime = Mathf.Lerp(ClientDef.BLOCK_DEFAULTMINSPAWNTIME, ClientDef.BLOCK_MINSPAWNTIME_LIMIT, DifficultyRate);
+        float maxSpawnTime = Mathf.Lerp(ClientDef.BLOCK_DEFAULTMAXSPAWNTIME, ClientDef.BLOCK_MAXSPAWNTIME_LIMIT, DifficultyRate);
+
+        m_NextBlockSpawnTime = RandomUtil.GetRandomfloat(minSpawnTime, maxSpawnTime);
+
     }
 
     private void SpawnBlock()
@@ -347,7 +460,7 @@ public class ChapterModule : BattleModule
             return;
 
         // 스폰 위치 설정
-        float randomX = Random.Range(-ClientDef.BLOCK_SPAWN_X, ClientDef.BLOCK_SPAWN_X);
+        float randomX = RandomUtil.GetRandomfloat(-ClientDef.BLOCK_SPAWN_X, ClientDef.BLOCK_SPAWN_X);
         Vector3 spawnPosition = new Vector3(randomX, ClientDef.BLOCK_SPAWN_Y, 0f);
 
         // Block 생성
@@ -360,8 +473,9 @@ public class ChapterModule : BattleModule
             return;
         }
 
-        //랜덤 숫자
-        int randomNumber = RandomUtil.GetRandomIndex(1, ClientDef.BLOCK_MAXNUM);
+        // 랜덤 숫자
+        int maxNumber = GetBlockMaxNumber();
+        int randomNumber = RandomUtil.GetRandomIndex(1, maxNumber);
 
         // 랜덤 Block Type
         BlockType randomType = GetRandomBlockType();
@@ -375,32 +489,57 @@ public class ChapterModule : BattleModule
     private BlockType GetRandomBlockType()
     {
         BlockType[] blockTypes =
-        {
+            {
             BlockType.Rotation,
             BlockType.Move,
             BlockType.Armor,
             BlockType.Ghost
         };
 
-        // 첫 번째 타입 랜덤
-        int firstIndex = RandomUtil.GetRandomIndex(0, blockTypes.Length - 1);
+        // 0 ~ 99 중 하나
+        int randomValue = RandomUtil.GetRandomIndex(0, 99);
 
-        BlockType result = blockTypes[firstIndex];
-
-        // 90% : 하나만
-        // 10% : 두 개
-        if (RandomUtil.GetRandomIndex(1, 100) <= 10)
+        // 일반 블록 : 40%
+        if (randomValue < 40)
         {
-            int secondIndex;
+            return BlockType.None;
+        }
 
-            do
-            {
-                secondIndex = RandomUtil.GetRandomIndex(0,blockTypes.Length - 1);
-            }
-            while (secondIndex == firstIndex);
+        // 특성 개수 결정
+        // 40 ~ 84 : 특성 1개 = 45%
+        // 85 ~ 94 : 특성 2개 = 10%
+        // 95 ~ 99 : 특성 3개 = 5%
+        int typeCount;
 
-            // 두 Type 합치기
-            result |= blockTypes[secondIndex];
+        if (randomValue < 85)
+        {
+            typeCount = 1;
+        }
+        else if (randomValue < 95)
+        {
+            typeCount = 2;
+        }
+        else
+        {
+            typeCount = 3;
+        }
+
+        BlockType result = BlockType.None;
+        List<int> selectedIndexes = new List<int>();
+
+        while (selectedIndexes.Count < typeCount)
+        {
+            int randomIndex =
+                RandomUtil.GetRandomIndex(0, blockTypes.Length - 1);
+
+            // 이미 선택한 타입이면 다시 뽑기
+            if (selectedIndexes.Contains(randomIndex))
+                continue;
+
+            selectedIndexes.Add(randomIndex);
+
+            // BlockType 추가
+            result |= blockTypes[randomIndex];
         }
 
         return result;
@@ -420,18 +559,23 @@ public class ChapterModule : BattleModule
             // 계산 결과와 Block 숫자가 동일한지 확인
             if (Mathf.Approximately(result, blockNumber))
             {
+                SoundManager.Instance.StartSFX("SuccessButton");
+
                 // 블록에 데미지
                 block.Damage();
 
                 // 아직 HP가 남아있으면 새로운 숫자로 변경
                 if (block.GetHP() > 0)
                 {
-                    int newNumber = RandomUtil.GetRandomIndex(1, ClientDef.BLOCK_MAXNUM);
+                    int newNumber = RandomUtil.GetRandomIndex(1, GetBlockMaxNumber());
                     block.SetNumber(newNumber);
                 }
 
-                AddScore(100);
-                AddGold(100);
+                int rewardScore = GetRewardScore();
+                int rewardGold = GetRewardGold();
+
+                AddScore(rewardScore);
+                AddGold(rewardGold);
 
                 // 계산 공식 변경
                 SetFormula();
@@ -439,6 +583,8 @@ public class ChapterModule : BattleModule
                 return;
             }
         }
+
+        SoundManager.Instance.StartSFX("FailButton");
     }
 
     private void AddScore(int score)
@@ -452,6 +598,55 @@ public class ChapterModule : BattleModule
     {
         m_Gold += gold;
         UIManager.Instance.Refresh();
+    }
+
+    private float GetEquipNumberAverage()
+    {
+        if (m_EquipNumber == null || m_EquipNumber.Count == 0)
+            return 0f;
+
+        int total = 0;
+
+        foreach (int number in m_EquipNumber)
+        {
+            total += number;
+        }
+
+        return (float)total / m_EquipNumber.Count;
+    }
+
+    private int GetRewardScore()
+    {
+        float equipAverage = GetEquipNumberAverage();
+
+        // 기본 점수
+        int baseScore = 100;
+
+        // 시간 보너스
+        // 30초마다 +10
+        int timeBonus = Mathf.FloorToInt(m_Time / 30f) * 10;
+
+        // 장착 숫자 보너스
+        int equipBonus = Mathf.RoundToInt(equipAverage * 1.5f);
+
+        return baseScore + timeBonus + equipBonus;
+    }
+
+    private int GetRewardGold()
+    {
+        float equipAverage = GetEquipNumberAverage();
+
+        // 기본 골드
+        int baseGold = 20;
+
+        // 시간 보너스
+        // 30초마다 +3
+        int timeBonus = Mathf.FloorToInt(m_Time / 30f) * 3;
+
+        // 장착 숫자 보너스
+        int equipBonus = Mathf.RoundToInt(equipAverage * 0.4f);
+
+        return baseGold + timeBonus + equipBonus;
     }
     #endregion
 

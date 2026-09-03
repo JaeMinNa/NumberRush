@@ -4,13 +4,23 @@ public static class ClientDef
 {
     // Game
     public static readonly int GAME_SKIPTOTALCOUNT = 5;
-    public static readonly int GAME_DEFAULTHP = 1;
+    public static readonly int GAME_DEFAULTHP = 5;
+    public static readonly float GAME_MAX_DIFFICULTY_TIME = 300.0f; // 5분에 최대 난이도
 
     // Normal Block
     public static readonly int BLOCK_DEFAULTHP = 1;
-    public static readonly int BLOCK_MAXNUM = 15;
-    public static readonly float BLOCK_MINSPAWNTIME = 3f;
-    public static readonly float BLOCK_MAXSPAWNTIME = 10f;
+    public static readonly int BLOCK_DEFAULTMAXNUM = 10;
+    public static readonly int BLOCK_MAXNUM_LIMIT = 50;
+    public static readonly float BLOCK_DEFAULTDOWNSPEED = 0.1f;
+    public static readonly float BLOCK_DEFAULTHORIZONSPEED = 0.5f;
+    public static readonly float BLOCK_DEFAULTROTATIONSPEED = 50f;
+    public static readonly float BLOCK_MAXDOWNSPEED = 0.25f;
+    public static readonly float BLOCK_MAXHORIZONSPEED = 1.25f;
+    public static readonly float BLOCK_MAXROTATIONSPEED = 140.0f;
+    public static readonly float BLOCK_DEFAULTMINSPAWNTIME = 5f;
+    public static readonly float BLOCK_DEFAULTMAXSPAWNTIME = 10f;
+    public static readonly float BLOCK_MINSPAWNTIME_LIMIT = 2.5f;
+    public static readonly float BLOCK_MAXSPAWNTIME_LIMIT = 4.5f;
     public static readonly float BLOCK_SPAWN_X = 2.5f;
     public static readonly float BLOCK_SPAWN_Y = 5.5f;
     public static readonly float BLOCK_MOVE_X = 2.6f;

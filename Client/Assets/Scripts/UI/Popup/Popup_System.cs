@@ -77,11 +77,15 @@ public class Popup_System : UIElement
         if (MyData != null)
             MyData.OkAction?.Invoke();
 
+        SoundManager.Instance.StartSFX("ClickButton");
+
         UIManager.Instance.Close<Popup_System>();
     }
 
     private void OnClick_Cancel()
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         UIManager.Instance.Close<Popup_System>();
     }
     #endregion

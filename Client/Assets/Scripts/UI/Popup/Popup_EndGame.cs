@@ -65,6 +65,8 @@ public class Popup_EndGame : UIElement
     #region Member Method
     private async void OnClick_Restart()
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         await m_ChapterModule.RestartGame();
 
         UIManager.Instance.Close<Popup_EndGame>();
@@ -72,6 +74,8 @@ public class Popup_EndGame : UIElement
 
     private void OnClick_Home()
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         m_ChapterModule.EndGame();
 
         UIManager.Instance.Close<Popup_EndGame>();

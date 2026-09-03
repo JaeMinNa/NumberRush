@@ -73,7 +73,7 @@ public class GameManager : Singleton<GameManager>
         //_ = NetworkManager.Instance;
         //_ = PatchManager.Instance;
         _ = UIManager.Instance;
-        //_ = SoundManager.Instance;
+        _ = SoundManager.Instance;
         //_ = PoolManager.Instance;
         //_ = BackKeyManager.Instance;
         //_ = RedPointManager.Instance;

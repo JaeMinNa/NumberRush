@@ -3772,8 +3772,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: NickName!!
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 77aa30ca08fdd4cdd8ec6436a3af94ac, type: 2}
-  m_sharedMaterial: {fileID: -4509379148335439522, guid: 77aa30ca08fdd4cdd8ec6436a3af94ac, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 6fb0f4d2543102549b780a386d157dbb, type: 2}
+  m_sharedMaterial: {fileID: 6240734217888770793, guid: 6fb0f4d2543102549b780a386d157dbb, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -3797,7 +3797,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 29.2
+  m_fontSize: 32
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1

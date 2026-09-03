@@ -42,6 +42,8 @@ public class LobbyWindow : UIElement
 
     public override void OnOpen(List<object> args)
     {
+        SoundManager.Instance.StartBGM("BGM_Lobby");
+
         Img_Character.sprite = ResourceLoader.LoadAssetResources<Sprite>($"Image/Character/Character_Sample{User.UserCommonData.ImageNum}");
         Text_Score.text = $"SCORE : {User.UserGameData.Score}";
         Text_Level.text = GameUtil.GetLevel(User.UserGameData.Score).ToString();
@@ -68,16 +70,22 @@ public class LobbyWindow : UIElement
     #region Member Method
     private void OnClick_GameStart()
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         GameManager.Instance.LoadGameScenen();
     }
 
     private void OnClick_UserInfo()
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         UIManager.Instance.Open<Popup_UserInfo>(UI.Popup, "Prefabs/UI/Popup/Popup_UserInfo");
     }
 
     private void OnClick_GoldAdd()
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         UIManager.Instance.Open<Popup_Shop>(UI.Popup, "Prefabs/UI/Popup/Popup_Shop");
 
         // 골드 획득 치트
@@ -90,16 +98,22 @@ public class LobbyWindow : UIElement
 
     private void OnClick_Numbers()
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         UIManager.Instance.Open<Popup_MyNumbers>(UI.Popup, "Prefabs/UI/Popup/Popup_MyNumbers");
     }
 
     private void OnClick_Shop()
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         UIManager.Instance.Open<Popup_Shop>(UI.Popup, "Prefabs/UI/Popup/Popup_Shop");
     }
 
     private void OnClick_Ranking()
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         // 랭킹 데이터 가져오기
         var Head = Util.MakeHeaderData(UserContents.GetRankData);
         NetworkManager.Instance.SendContentsPacket(ContentsType.User, Head);
@@ -107,6 +121,8 @@ public class LobbyWindow : UIElement
 
     private void OnClick_Settings()
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         UIManager.Instance.Open<Popup_Settings>(UI.Popup, "Prefabs/UI/Popup/Popup_Settings");
     }
     #endregion

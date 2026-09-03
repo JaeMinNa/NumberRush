@@ -105,11 +105,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41f931f17df8f7a449fbcd09f2d65ac4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Block
-  DownSpeed: 1
-  HorizontalSpeed: 1.5
-  RotationSpeed: 100
-  GhostInterval: 0.5
-  ArmorScale: 1.5
+  DownSpeed: 0.1
+  HorizontalSpeed: 0.5
+  RotationSpeed: 50
   NumberText: {fileID: 7793960417991482094}
 --- !u!1 &3855111785595574474
 GameObject:

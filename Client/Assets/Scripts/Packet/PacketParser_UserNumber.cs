@@ -38,9 +38,15 @@ public partial class PacketSystem
                 {
                     if (Success)
                     {
+                        SoundManager.Instance.StartSFX("BuyButton");
+
                         List<int> numbers = Util.ToObjectJson<List<int>>(Data);
 
                         UIManager.Instance.Open<Popup_ShopResult>(UI.Popup, "Prefabs/UI/Popup/Popup_ShopResult", new List<object> { numbers });
+                    }
+                    else
+                    {
+                        SoundManager.Instance.StartSFX("MissButton");
                     }
                 }
                 break;

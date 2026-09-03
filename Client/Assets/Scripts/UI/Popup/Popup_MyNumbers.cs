@@ -163,6 +163,8 @@ public class Popup_MyNumbers : UIElement
 
     private void OnClick_EquipSlot(SlotType type, int num)
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         switch (type)
         {
             case SlotType.Normal:
@@ -183,6 +185,8 @@ public class Popup_MyNumbers : UIElement
 
     private void OnClick_InvenSlot(SlotType type, int num)
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         var equipNumber = new List<int>(User.UserNumberData.EquipNumber);
 
         // 이미 최대 장착 슬롯 일 때
@@ -210,6 +214,8 @@ public class Popup_MyNumbers : UIElement
 
     private void OnClick_Quit()
     {
+        SoundManager.Instance.StartSFX("ClickButton");
+
         UIManager.Instance.Close<Popup_MyNumbers>();
     }
     #endregion
