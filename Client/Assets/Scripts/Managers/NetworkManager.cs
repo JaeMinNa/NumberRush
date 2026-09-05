@@ -89,7 +89,7 @@ public partial class NetworkManager : Singleton<NetworkManager>
         formData.AddField("AccountCode", GameManager.Instance.AccountCode);
         formData.AddField("Data", sendData);
 
-        string Url = "http://localhost:15000/Server";   // 필요에 따라서 로컬, 데브, 라이브 등으로 구분 할 수 있음
+        string Url = Util.GetServerUrl(GameManager.Instance.GetServerType());
 
         //UIManager.Instance.SetTouchBlock(true);
 

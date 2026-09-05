@@ -183,11 +183,11 @@ class DownloadResourceLoader : IResourceLoader
         {
             AssetBundle depAsset = null;
 #if UNITY_ANDROID
-            depAsset = AssetBundle.LoadFromFile(Path.Combine(BasePath, "Android.assetbundle"));
+            depAsset = AssetBundle.LoadFromFile(Path.Combine(m_BasePath, "Android.assetbundle"));
 #elif UNITY_IOS
-            depAsset = AssetBundle.LoadFromFile(Path.Combine(BasePath, "iOS.assetbundle"));
+            depAsset = AssetBundle.LoadFromFile(Path.Combine(m_BasePath, "iOS.assetbundle"));
 #elif UNITY_WEBGL
-            depAsset = AssetBundle.LoadFromFile(Path.Combine(BasePath, "WebGL.assetbundle"));
+            depAsset = AssetBundle.LoadFromFile(Path.Combine(m_BasePath, "WebGL.assetbundle"));
 #endif
 
             if (depAsset == null)
@@ -230,11 +230,11 @@ class DownloadResourceLoader : IResourceLoader
         {
             AssetBundle depAsset = null;
 #if UNITY_ANDROID
-            depAsset = await AssetBundle.LoadFromFileAsync(Path.Combine(BasePath, "Android.assetbundle"));
+            depAsset = await AssetBundle.LoadFromFileAsync(Path.Combine(m_BasePath, "Android.assetbundle"));
 #elif UNITY_IOS
-            depAsset = await AssetBundle.LoadFromFileAsync(Path.Combine(BasePath, "iOS.assetbundle"));
+            depAsset = await AssetBundle.LoadFromFileAsync(Path.Combine(m_BasePath, "iOS.assetbundle"));
 #elif UNITY_WEBGL
-            depAsset = await AssetBundle.LoadFromFileAsync(Path.Combine(BasePath, "WebGL.assetbundle"));
+            depAsset = await AssetBundle.LoadFromFileAsync(Path.Combine(m_BasePath, "WebGL.assetbundle"));
 #endif
 
             if (depAsset == null)

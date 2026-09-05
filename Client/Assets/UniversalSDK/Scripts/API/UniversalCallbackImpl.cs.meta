@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: eefc6918b51714a77acd4e9192d0de71
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 204843
+  packageName: Universal SDK
+  packageVersion: 1.3.3
+  assetPath: Assets/UniversalSDK/Scripts/API/UniversalCallbackImpl.cs
+  uploadId: 669917

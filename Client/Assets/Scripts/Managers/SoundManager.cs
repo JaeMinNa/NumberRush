@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Audio;
-using static UnityEditor.ShaderGraph.Internal.KeywordDependentCollection;
-using static UnityEngine.RuleTile.TilingRuleOutput;
 
 public class SoundManager : Singleton<SoundManager>
 {

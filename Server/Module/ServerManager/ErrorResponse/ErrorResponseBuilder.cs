@@ -9,7 +9,7 @@ public class ErrorResponseBuilder
     private PacketHeader m_outHeaderData;
     private readonly List<PacketBody> m_outBodyData;
     private ReceiveType m_receiveType = ReceiveType.ShowMessage;
-    private MessageType m_messageType = MessageType.Message;
+    private Messagetype m_messageType = Messagetype.Message;
 
     // 기본 에러 메시지는 ui_common_0158로 "서버 오류가 발생했습니다."이다
     private string m_errorMessage = "서버 오류가 발생했습니다.";
@@ -54,7 +54,7 @@ public class ErrorResponseBuilder
         return this;
     }
 
-    public ErrorResponseBuilder SetMessageType(MessageType messageType)
+    public ErrorResponseBuilder SetMessageType(Messagetype messageType)
     {
         m_messageType = messageType;
         return this;

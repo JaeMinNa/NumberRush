@@ -391,4 +391,25 @@ public static class Util
             return false;
         #endif
     }
+
+    public static string GetServerUrl(ServerType type)
+    {
+        string url = string.Empty;
+
+        switch (type)
+        {
+            case ServerType.Local:
+                url = "http://localhost:15000/Server";
+                break;
+
+            case ServerType.Live:
+                url = "http://43.201.58.20:15000/Server";
+                break;
+
+            default:
+                break;
+        }
+
+        return url;
+    }
 }

@@ -20,7 +20,7 @@ public enum ResponseType
     AuthKeyError,           // 인증키 에러
 }
 
-public enum MessageType
+public enum Messagetype
 {
     None,
 

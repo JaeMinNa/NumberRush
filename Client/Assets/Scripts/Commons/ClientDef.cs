@@ -33,6 +33,12 @@ public static class ClientDef
     public static readonly float GHOSTBLOCK_INTERVAL = 0.5f;
 }
 
+public enum ServerType
+{
+    Local,
+    Live,
+}
+
 public class MessageData
 {
     public PopupType Type;

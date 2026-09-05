@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 02dde6c9402b44061a693805c25ab11f
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 204843
+  packageName: Universal SDK
+  packageVersion: 1.3.3
+  assetPath: Assets/UniversalSDK/Scripts/Utils/Helpers.cs
+  uploadId: 669917

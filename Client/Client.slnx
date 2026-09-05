@@ -6,6 +6,7 @@
   <Project Path="Assembly-CSharp-firstpass.csproj" />
   <Project Path="UniTask.TextMeshPro.csproj" />
   <Project Path="Assembly-CSharp-Editor-firstpass.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="UniTask.Editor.csproj" />
   <Project Path="UniTask.DOTween.csproj" />
 </Solution>

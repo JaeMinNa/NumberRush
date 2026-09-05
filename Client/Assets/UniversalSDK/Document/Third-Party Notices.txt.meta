@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: c93cec017678548b2a70c823f5e27728
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 204843
+  packageName: Universal SDK
+  packageVersion: 1.3.3
+  assetPath: Assets/UniversalSDK/Document/Third-Party Notices.txt
+  uploadId: 669917

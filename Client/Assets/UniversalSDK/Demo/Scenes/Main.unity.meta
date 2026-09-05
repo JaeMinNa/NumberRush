@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: d03a190eb5fa94b80940519666349e72
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 204843
+  packageName: Universal SDK
+  packageVersion: 1.3.3
+  assetPath: Assets/UniversalSDK/Demo/Scenes/Main.unity
+  uploadId: 669917

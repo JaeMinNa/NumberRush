@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 
 public class GameManager : Singleton<GameManager>
 {
+    private ServerType m_ServerType = ServerType.Live;
     private string m_AccountCode = string.Empty;
 
     public static GameManager Instance
@@ -52,6 +53,11 @@ public class GameManager : Singleton<GameManager>
         {
             m_AccountCode = value;
         }
+    }
+
+    public ServerType GetServerType()
+    {
+        return m_ServerType;
     }
     #endregion
 
