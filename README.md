@@ -398,7 +398,7 @@ public static async Task<UserData_Common> GetUserCommonDataToConnect(string acco
 
 #### 구현 방법
 - 블록 특성을 `[System.Flags]` enum으로 정의
-- 하나의 블록이 `Rotation + Move`, `Armor + Move`처럼 여러 타입을 동시에 가질 수 있도록 비트 플래그 방식 사용
+- 하나의 블록이 Rotation + Move, Armor + Move처럼 여러 타입을 동시에 가질 수 있도록 비트 플래그 방식 사용
 
 ```C#
 [System.Flags]
