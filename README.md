@@ -1,4 +1,4 @@
-<img width="1393" height="200" alt="image" src="https://github.com/user-attachments/assets/823fda17-cf8c-44f8-9ed0-756c323e19e0" /># 🖥️ Number Rush
+# 🖥️ Number Rush
 + 당신의 뇌의 피지컬을 보여주세요!
 + 끊임없이 다가오는 블록을 사친연산으로 파괴하세요!
 + 숫자들을 수집하세요!
