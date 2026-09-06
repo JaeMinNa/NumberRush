@@ -193,16 +193,29 @@ public partial class NetworkManager : Singleton<NetworkManager>
 ```
 <br/>
 
-- Editor / Live 환경에 따라 서버 주소를 분리하여 개발 환경과 실제 서비스 환경을 구분
+- Local/Live 환경에 따라 서버 주소를 분리하여 개발 환경과 실제 서비스 환경을 구분
 
 ```C#
-public string GetServerAddress()
+public static string GetServerUrl(ServerType type)
 {
-#if UNITY_EDITOR
-    return ServerAddress.Test;
-#else
-    return ServerAddress.Live;
-#endif
+    string url = string.Empty;
+
+    switch (type)
+    {
+        case ServerType.Local:
+            url = "http://localhost:15000/Server";
+            break;
+
+        case ServerType.Live:
+            url = "http://43.201.58.20:15000/Server"; // 퍼블릭 IPv4 주소
+            break;
+
+        default:
+            break;
+    }
+
+    return url;
+}
 }
 ```
 <br/>
@@ -609,18 +622,18 @@ for (int i = 0; i < m_UsersRankInfo.Count; ++i)
 ### 1. 서버 통신 방법 선택
 
 #### 문제 상황
-- 이번 프로젝트에서는 로그인, 유저 데이터 저장, 숫자 구매/장착, 랭킹 등의 서버 기능이 필요
+- 로그인, 유저 데이터 저장, 숫자 구매/장착, 랭킹 등의 서버 기능이 필요
 - 이전 프로젝트에서는 Photon, 뒤끝 서버 등 외부 서비스를 사용했기 때문에 직접 서버를 구축하고 통신하는 경험이 부족했음
 - 서버 통신 방식에 따라 구현 난이도와 서버 구조가 크게 달라지기 때문에 프로젝트 성격에 맞는 방식 선택이 필요
 
 #### 해결 방안
 
 ##### HTTP
-- Request / Response 구조가 단순하고 구현 및 디버깅이 쉬움
-- REST 형태의 API로 기능을 명확하게 분리 가능
+- Request/Response 구조가 단순하고 구현 및 디버깅이 쉬움
+- 모바일 환경에서 안정적
 - 로그인, 저장, 구매, 랭킹처럼 특정 시점에만 데이터를 주고받는 기능에 적합
 - ASP.NET Core와 Unity 모두 관련 기능을 기본적으로 지원
-- 요청할 때마다 연결/응답 과정이 필요하므로 프레임 단위 실시간 통신에는 적합하지 않음
+- 프레임 단위 실시간 통신에는 적합하지 않음
 
 ##### TCP Socket
 - 연결을 유지한 상태로 지속적인 양방향 통신 가능
@@ -634,11 +647,11 @@ for (int i = 0; i < m_UsersRankInfo.Count; ++i)
 - 현재 Number Rush의 서버 기능은 서버가 클라이언트에 지속적으로 Push해야 하는 데이터가 없음
 - 유지 연결의 장점을 활용할 기능이 부족함
 
-##### Photon / BaaS
-- 빠르게 서버 기능을 구현할 수 있고 인프라 관리 부담이 적음
-- 이전 프로젝트에서 사용 경험이 있음
-- 직접 서버를 설계하고 배포하는 경험을 얻는다는 이번 프로젝트의 목표와 맞지 않음
-- 서비스에 종속되는 구조가 될 수 있음
+##### UDP
+- 지연이 거의 없고 가장 빠름
+- 전송 순서가 보장 안됨
+- 패킷이 사라질 수 있음
+- 실시간 FPS, 플레이어 위치, 물리 연산 같은 기능에 유리
 
 #### 의견 결정
 ##### HTTP 통신 방식 사용
@@ -646,12 +659,11 @@ for (int i = 0; i < m_UsersRankInfo.Count; ++i)
 - 로그인, 데이터 저장, 구매, 랭킹 모두 요청 시점에 결과를 받는 구조로 충분
 - 구현 구조가 단순하여 서버 로직 자체에 집중할 수 있음
 - ASP.NET Core 서버 구축부터 Unity 통신, AWS 배포까지 전체 과정을 직접 경험할 수 있음
-- 추후 실시간 기능이 추가된다면 해당 기능만 WebSocket 또는 TCP 방식으로 분리하는 것이 적합하다고 판단
 <br/>
 <br/>
 
 
-### 2. MongoDB를 선택한 이유
+### 2. DB 선택
 
 #### 문제 상황
 - 서버에서 유저 기본 정보, 게임 데이터, 보유 숫자, 장착 숫자, 점수 등을 영구 저장할 DB 필요
@@ -680,35 +692,15 @@ for (int i = 0; i < m_UsersRankInfo.Count; ++i)
 ##### MongoDB
 - JSON과 유사한 Document 구조로 C# 객체와 데이터 형태가 직관적으로 대응
 - Schema가 비교적 유연하여 개발 중 필드 추가/변경이 쉬움
-- `AccountCode`를 기준으로 유저 단위 데이터를 조회하는 현재 구조와 잘 맞음
+- AccountCode를 기준으로 유저 단위 데이터를 조회하는 현재 구조와 잘 맞음
 - MongoDB.Driver를 이용해 C#에서 Lambda 기반으로 간단하게 Query 작성 가능
 
 #### 의견 결정
 ##### MongoDB 사용
-- Number Rush의 데이터는 강한 관계형 구조보다 `유저 1명 = 여러 게임 데이터 Document` 형태에 가까움
-- 개발 과정에서 `Gold`, `Score`, `ImageNum`, `EquipNumber` 등 필드가 계속 추가되었기 때문에 유연한 Document DB가 유리
+- Number Rush의 데이터는 강한 관계형 구조보다 `유저 1명 = 여러 게임 데이터 Document` 형태
+- 개발 과정에서 Gold, Score, ImageNum, EquipNumber 등 필드가 계속 추가되었기 때문에 유연한 Document DB가 유리
 - C# Model과 MongoDB Document를 유사한 형태로 관리할 수 있어 개발 속도가 빠름
-- 랭킹은 `Score` 정렬, 로그인은 `AccountCode` Index 조회만으로 구현 가능하여 현재 규모에서는 충분한 성능을 확보할 수 있다고 판단
-<br/>
-
-```C#
-public class UserNumberData
-{
-    public string AccountCode { get; set; }
-    public List<int> EquipNumber { get; set; } = new List<int>();
-    public List<int> InventoryNumber { get; set; } = new List<int>();
-}
-```
-<br/>
-
-```C#
-var filter = Builders<UserNumberData>.Filter
-    .Eq(x => x.AccountCode, accountCode);
-
-UserNumberData data = await UserNumberCollection
-    .Find(filter)
-    .SingleOrDefaultAsync();
-```
+- 현재 규모에서는 충분한 성능을 확보할 수 있다고 판단
 <br/>
 <br/>
 
@@ -744,29 +736,22 @@ UserNumberData data = await UserNumberCollection
 - 실시간 대규모 전투 서버가 아니기 때문에 2 vCPU / 2 GiB 수준이면 현재 트래픽에 충분하다고 판단
 - .NET이 ARM64 Publish를 지원하므로 x86 인스턴스를 고집할 이유가 적음
 - Graviton 기반 인스턴스를 사용하여 비용 대비 성능을 확보
-- 실제 라이브 환경을 ARM64로 구성하면서 빌드 타깃과 서버 아키텍처 차이도 직접 경험
-<br/>
-
-```bash
-dotnet publish -c Release -r linux-arm64 --self-contained false
-```
 <br/>
 <br/>
 
 
-### 4. Google 로그인 SDK 선택
+### 4. Google 로그인 방식 선택
 
 #### 문제 상황
-- Google 계정을 이용해 유저를 식별하고 서버의 `AccountCode`로 사용할 고유 ID가 필요
+- Google 계정을 이용해 유저를 식별하고 서버의 AccountCode로 사용할 고유 ID가 필요
 - Google 로그인 구현 방법으로 GPGS, Firebase Authentication, Universal SDK를 비교
-- 현재 프로젝트는 Google 로그인만 우선 구현하면 되며, 로그인 시스템을 지나치게 복잡하게 만들 필요는 없었음
 
 #### 해결 방안
 
 ##### Google Play Games Services (GPGS)
 - Google Play Games와 직접 연동할 수 있음
 - 로그인 외에도 업적, 리더보드, Saved Games 등 Google Play Games 기능을 사용할 수 있음
-- Google Cloud / Play Console 설정과 OAuth Client 설정 등 초기 구성이 필요
+- Google Cloud, Play Console 설정과 OAuth Client 설정 등 초기 구성이 필요
 - 현재 프로젝트는 GPGS의 게임 기능보다 Google 계정 식별만 필요
 
 ##### Firebase Authentication
@@ -778,7 +763,7 @@ dotnet publish -c Release -r linux-arm64 --self-contained false
 
 ##### Universal SDK
 - 현재 필요한 Google 로그인 기능을 비교적 간단하게 구현 가능
-- SDK에서 로그인 후 전달받은 Google 고유 ID를 자체 서버의 `AccountCode`로 연결 가능
+- SDK에서 로그인 후 전달받은 Google 고유 ID를 자체 서버의 AccountCode로 연결 가능
 - 기존 서버/DB 구조를 변경하지 않고 인증 단계만 추가할 수 있음
 - 추후 필요하다면 Firebase를 추가하여 게스트 계정 연동이나 다른 Provider 로그인 구조로 확장 가능
 
@@ -796,10 +781,10 @@ dotnet publish -c Release -r linux-arm64 --self-contained false
 ## 📋 프로젝트 회고
 이번 프로젝트의 가장 큰 목표는 이전 프로젝트에서 사용하지 않았던 **HTTP 서버 통신과 직접적인 라이브 서버 구축 경험**을 얻는 것이었습니다. 이전에는 Photon이나 뒤끝 서버와 같은 외부 서비스를 활용하여 기능 구현에 집중했다면, Number Rush에서는 Unity 클라이언트부터 ASP.NET Core 서버, MongoDB, AWS 배포까지 하나의 흐름을 직접 구성했습니다.
 
-특히 클라이언트가 요청한 값을 그대로 저장하는 것이 아니라 서버에서 데이터를 다시 조회하고 검증한 뒤 결과를 반환하는 구조를 구현하면서, 단순히 "통신이 되는 코드"와 실제 서비스에서 사용할 수 있는 서버 구조의 차이를 경험할 수 있었습니다. 또한 MongoDB의 Index, AWS EC2 인스턴스와 CPU 아키텍처, Test / Live 환경 분리처럼 게임 로직 외에도 서버 운영에 필요한 요소들을 직접 다뤄볼 수 있었습니다.
+특히 클라이언트가 요청한 값을 그대로 저장하는 것이 아니라 서버에서 데이터를 다시 조회하고 검증한 뒤 결과를 반환하는 구조를 구현하면서, 단순히 통신이 되는 코드와 실제 서비스에서 사용할 수 있는 서버 구조의 차이를 경험할 수 있었습니다. 또한 AWS EC2 인스턴스와 CPU 아키텍처, Test/Live 환경 분리처럼 게임 로직 외에도 서버 운영에 필요한 요소들을 직접 다뤄볼 수 있었습니다.
 
 Google 로그인 역시 단순히 SDK를 적용하는 것보다 GPGS, Firebase, Universal SDK의 역할을 비교하고 현재 프로젝트에 필요한 범위를 기준으로 Universal SDK를 선택했습니다. 이를 통해 기술을 많이 사용하는 것보다 프로젝트의 요구사항에 맞는 기술을 선택하는 과정이 중요하다는 점을 다시 확인했습니다.
 
-또한 블록 타입 구현 과정에서는 AI를 적극 활용했습니다. AI가 제안한 코드를 그대로 적용하는 방식이 아니라, `[Flags]` 구조와 비트 연산의 동작 원리를 확인하고 기존 프로젝트 구조에 맞게 수정하면서 개발 보조 도구로 활용했습니다.
+또한 블록 타입 구현 과정에서는 AI를 적극 활용했습니다. AI가 제안한 코드를 그대로 적용하는 방식이 아니라, 기존 프로젝트 구조에 맞게 수정하면서 개발 보조 도구로 활용했습니다.
 
-이번 프로젝트를 통해 **Unity 클라이언트 → HTTP 통신 → ASP.NET Core 서버 → MongoDB → AWS 라이브 환경**으로 이어지는 전체 구조를 직접 구축했다는 점이 가장 큰 성과였습니다. 추후에는 HTTPS 적용, 서버 프로세스 자동 관리, 배포 자동화, 캐시 서버 도입 등 실제 서비스 운영에 가까운 인프라 구조까지 확장해보고 싶습니다.
+이번 프로젝트를 통해 **Unity 클라이언트 → HTTP 통신 → ASP.NET Core 서버 → MongoDB → AWS 라이브 환경**으로 이어지는 전체 구조를 직접 구축했다는 점이 가장 큰 성과였습니다. 추후에는 에셋 번들 적용, 파이어 베이스 적용, 운영툴 제작 등 실제 서비스 운영에 가까운 인프라 구조까지 확장해보고 싶습니다.
