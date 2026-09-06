@@ -1,4 +1,4 @@
-# 🖥️ Number Rush
+<img width="1393" height="200" alt="image" src="https://github.com/user-attachments/assets/823fda17-cf8c-44f8-9ed0-756c323e19e0" /># 🖥️ Number Rush
 + 당신의 뇌의 피지컬을 보여주세요!
 + 끊임없이 다가오는 블록을 사친연산으로 파괴하세요!
 + 숫자들을 수집하세요!
@@ -31,16 +31,16 @@
 ## ▶️ 게임 스크린샷
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/b6b0eef1-77d3-4b0a-82e5-209b516450b3" width="35%"/>
-  <img src="https://github.com/user-attachments/assets/c977b0e8-aef5-4ada-a269-22c5fe00ac9b" width="35%"/>
+  <img src="https://github.com/user-attachments/assets/b6b0eef1-77d3-4b0a-82e5-209b516450b3" width="30%"/>
+  <img src="https://github.com/user-attachments/assets/c977b0e8-aef5-4ada-a269-22c5fe00ac9b" width="30%"/>
 </p>
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/e43d0db6-50b6-40ae-9112-6872adc6f362" width="35%"/>
-  <img src="https://github.com/user-attachments/assets/f8d3c142-dc84-4c4a-b6b9-f1a83ec4f3bb" width="35%"/>
+  <img src="https://github.com/user-attachments/assets/e43d0db6-50b6-40ae-9112-6872adc6f362" width="30%"/>
+  <img src="https://github.com/user-attachments/assets/f8d3c142-dc84-4c4a-b6b9-f1a83ec4f3bb" width="30%"/>
 </p>
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/cb0af2da-6a81-47bd-842a-407c4ba263b8" width="35%"/>
-  <img src="https://github.com/user-attachments/assets/b8993ae9-b307-49c2-910e-761e6f47782f" width="35%"/>
+  <img src="https://github.com/user-attachments/assets/cb0af2da-6a81-47bd-842a-407c4ba263b8" width="30%"/>
+  <img src="https://github.com/user-attachments/assets/b8993ae9-b307-49c2-910e-761e6f47782f" width="30%"/>
 </p>
 <br/>
 
@@ -368,6 +368,8 @@ public static async Task<UserData_Common> GetUserCommonDataToConnect(string acco
 
 
 ### 3. AWS 라이브 서버 셋팅
+<img src="https://github.com/user-attachments/assets/6de974f7-44db-42d6-8e3c-092470ee9ad" width="30%"/>
+<br/>
 
 #### 구현 이유
 - 로컬 PC에서만 동작하던 ASP.NET Core 서버를 실제 Android 빌드에서도 접속할 수 있는 라이브 환경으로 구성하기 위해
