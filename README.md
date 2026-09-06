@@ -297,6 +297,11 @@ case UserNumberContents.BuyOneNumber_Random:
 
 
 ### 2. Google 로그인 구현 (Universal SDK)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/b6b0eef1-77d3-4b0a-82e5-209b516450b3" width="35%"/>
+</p>
+<br/>
+
 #### 구현 이유
 - Google 계정을 이용한 간편 로그인을 제공하기 위해
 
