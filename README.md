@@ -374,7 +374,7 @@ public static async Task<UserData_Common> GetUserCommonDataToConnect(string acco
 #### 구현 이유
 - 로컬 PC에서만 동작하던 ASP.NET Core 서버를 실제 Android 빌드에서도 접속할 수 있는 라이브 환경으로 구성하기 위해
 - 개인 프로젝트 규모에서 필요한 성능을 확보하면서 서버 유지 비용을 최소화하기 위해
-- 서버와 MongoDB를 직접 운영하여 HTTP 통신부터 DB 저장, 배포까지 전체 서버 흐름을 경험하기 위해
+- 서버와 MongoDB를 직접 운영하여 HTTP 통신부터 DB 저장까지 전체 서버 흐름을 경험하기 위해
 
 #### 구현 방법
 - AWS EC2 인스턴스 생성
