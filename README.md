@@ -297,9 +297,7 @@ case UserNumberContents.BuyOneNumber_Random:
 
 
 ### 2. Google 로그인 구현 (Universal SDK)
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/b6b0eef1-77d3-4b0a-82e5-209b516450b3" width="35%"/>
-</p>
+<img src="https://github.com/user-attachments/assets/b6b0eef1-77d3-4b0a-82e5-209b516450b3" width="30%"/>
 <br/>
 
 #### 구현 이유
