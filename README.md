@@ -31,16 +31,16 @@
 ## ▶️ 게임 스크린샷
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/b6b0eef1-77d3-4b0a-82e5-209b516450b3" width="49%"/>
-  <img src="https://github.com/user-attachments/assets/c977b0e8-aef5-4ada-a269-22c5fe00ac9b" width="49%"/>
+  <img src="https://github.com/user-attachments/assets/b6b0eef1-77d3-4b0a-82e5-209b516450b3" width="35%"/>
+  <img src="https://github.com/user-attachments/assets/c977b0e8-aef5-4ada-a269-22c5fe00ac9b" width="35%"/>
 </p>
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/e43d0db6-50b6-40ae-9112-6872adc6f362" width="49%"/>
-  <img src="https://github.com/user-attachments/assets/f8d3c142-dc84-4c4a-b6b9-f1a83ec4f3bb" width="49%"/>
+  <img src="https://github.com/user-attachments/assets/e43d0db6-50b6-40ae-9112-6872adc6f362" width="35%"/>
+  <img src="https://github.com/user-attachments/assets/f8d3c142-dc84-4c4a-b6b9-f1a83ec4f3bb" width="35%"/>
 </p>
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/cb0af2da-6a81-47bd-842a-407c4ba263b8" width="49%"/>
-  <img src="https://github.com/user-attachments/assets/b8993ae9-b307-49c2-910e-761e6f47782f" width="49%"/>
+  <img src="https://github.com/user-attachments/assets/cb0af2da-6a81-47bd-842a-407c4ba263b8" width="35%"/>
+  <img src="https://github.com/user-attachments/assets/b8993ae9-b307-49c2-910e-761e6f47782f" width="35%"/>
 </p>
 <br/>
 
