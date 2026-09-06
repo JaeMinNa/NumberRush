@@ -43,23 +43,17 @@
 </p>
 <br/>
 
-## 🔳 초기 와이어프레임
-![image](https://github.com/user-attachments/assets/09923004-558f-4711-81ee-6829d915d297)
+## 🔳 초기 기획
+![image](https://github.com/user-attachments/assets/dbc3b220-0872-460b-85b0-60fd00cb0f97)
 
 
-## 🧩 클라이언트 구조
-
-### Managers
-![image](https://github.com/user-attachments/assets/580f4e1e-c8da-431b-afe0-315b241640d5)
-
-### 데이터 전달 방식
-![image](https://github.com/user-attachments/assets/b9296579-8850-48c3-8f3c-b2830247693a)
+## 🧩 클라이언트 <-> 서버 통신 방식
+![image](https://github.com/user-attachments/assets/0d35107a-69f3-4f4d-aea8-13c93cb854e4)
 
 
 ## ✏️ 구현 기능
 
-### 1. UIManager 구현
-<img src="https://github.com/user-attachments/assets/e37abeea-9c4a-46a7-8b04-b6270da7d7cd" width="50%"/>
+### 1. HTTP 서버 통신 구현
 
 #### 구현 이유
 - 프로젝트의 UI를 체계적으로 관리하기 위해
