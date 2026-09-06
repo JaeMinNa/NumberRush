@@ -368,7 +368,7 @@ public static async Task<UserData_Common> GetUserCommonDataToConnect(string acco
 
 
 ### 3. AWS 라이브 서버 셋팅
-![image](https://https://github.com/user-attachments/assets/6de974f7-44db-42d6-8e3c-092470ee9ad)
+![image](https://https://github.com/user-attachments/assets/6de974f7-44db-42d6-8e3c-092470ee9adc)
 <br/>
 
 #### 구현 이유
