@@ -368,7 +368,7 @@ public static async Task<UserData_Common> GetUserCommonDataToConnect(string acco
 
 
 ### 3. AWS 라이브 서버 셋팅
-![image](https://https://github.com/user-attachments/assets/6de974f7-44db-42d6-8e3c-092470ee9adc)
+![image](https://github.com/user-attachments/assets/6de974f7-44db-42d6-8e3c-092470ee9adc)
 <br/>
 
 #### 구현 이유
@@ -388,6 +388,8 @@ public static async Task<UserData_Common> GetUserCommonDataToConnect(string acco
 
 
 ### 4. 블록 타입 구현 (AI 활용)
+<img src="https://github.com/user-attachments/assets/c977b0e8-aef5-4ada-a269-22c5fe00ac9b" width="30%"/>
+<br/>
 
 #### 구현 이유
 - 단순히 숫자가 내려오는 방식만 반복하면 플레이가 빠르게 단조로워질 수 있기 때문에 블록별 특성을 추가
@@ -517,6 +519,8 @@ public void Update()
 
 
 ### 5. HTTP 통신 방식의 랭킹 구현
+<img src="https://github.com/user-attachments/assets/cb0af2da-6a81-47bd-842a-407c4ba263b8" width="30%"/>
+<br/>
 
 #### 구현 이유
 - 직접 구축한 서버와 DB만으로 랭킹 시스템을 구현하기 위해
@@ -669,6 +673,8 @@ for (int i = 0; i < m_UsersRankInfo.Count; ++i)
 
 
 ### 2. DB 선택
+![image](https://github.com/user-attachments/assets/36831194-d2f7-4bdd-afa3-276e5e189fe8)
+<br/>
 
 #### 문제 상황
 - 서버에서 유저 기본 정보, 게임 데이터, 보유 숫자, 장착 숫자, 점수 등을 영구 저장할 DB 필요
