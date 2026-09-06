@@ -57,41 +57,102 @@
 ### 1. HTTP 서버 통신 구현
 
 #### 구현 이유
-- 이전 개인 프로젝트에서는 뒤끝 서버, Photon과 같은 BaaS / 네트워크 솔루션을 사용했지만, 이번 프로젝트에서는 직접 서버를 구축하고 클라이언트와 서버가 통신하는 전체 흐름을 경험하기 위해 구현
-- 로그인, 유저 데이터 저장, 숫자 구매 및 장착, 랭킹처럼 실시간 동기화가 필요하지 않은 기능이 중심이기 때문에 HTTP Request / Response 방식이 프로젝트에 적합하다고 판단
+- BaaS/네트워크 솔루션을 사용하지 않고, 직접 서버를 구축하고 클라이언트와 서버가 통신하는 전체 흐름을 경험하기 위해
 - 클라이언트에서 데이터를 직접 저장하지 않고 서버에서 검증 및 처리하도록 구성하여 데이터 위변조 가능성을 줄이기 위해
-- 향후 서버 기능이 추가되더라도 ContentsType을 기준으로 기능을 확장할 수 있도록 공통 통신 구조를 설계
 
 #### 구현 방법
-- Unity 클라이언트에서는 `UnityWebRequest`를 사용하여 서버에 HTTP 요청
-- 요청 데이터는 Header / Body 구조로 구성하고 JSON으로 직렬화하여 서버로 전송
+- Unity 클라이언트에서는 UnityWebRequest를 사용하여 서버에 HTTP 요청
+- 요청 데이터는 Header/Body 구조로 구성하고 JSON으로 직렬화하여 서버로 전송
 - 서버 응답 역시 공통 Packet 형태로 받아 Header를 확인한 뒤 ContentsType에 맞는 데이터를 역직렬화하여 적용
-- 네트워크 요청은 `UniTask` 기반 비동기 방식으로 처리하여 메인 스레드의 흐름을 막지 않도록 구성
+- 향후 서버 기능이 추가되더라도 ContentsType을 기준으로 기능을 확장할 수 있도록 공통 통신 구조를 설계
+- 네트워크 요청은 UniTask 기반 비동기 방식으로 처리하여 메인 스레드의 흐름을 막지 않도록 구성
 
 ```C#
-public async UniTask<string> SendPost(string url, string jsonData)
+private IEnumerator SendServer(PacketType packetType, ContentsType contentsType, int subType, string Data, UnityAction receiveAction)
 {
-    byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(jsonData);
+    if (prevPacketType.Equals(packetType) && prevContentsType.Equals(contentsType) && prevSubType.Equals(subType))
+        yield break;
 
-    using UnityWebRequest request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST);
-    request.uploadHandler = new UploadHandlerRaw(bodyRaw);
-    request.downloadHandler = new DownloadHandlerBuffer();
-    request.SetRequestHeader("Content-Type", "application/json");
+    if (IsProcess)
+        yield return new WaitUntil(() => !IsProcess);
 
-    await request.SendWebRequest();
+    IsProcess = true;
+    prevPacketType = packetType;
+    prevContentsType = contentsType;
+    prevSubType = subType;
 
-    if (request.result != UnityWebRequest.Result.Success)
+    string json = Util.MakeServerPacket(packetType, Data);
+    string sendData = Util.StringCompress(json);
+
+    WWWForm formData = new WWWForm();
+    formData.AddField("AccountCode", GameManager.Instance.AccountCode);
+    formData.AddField("Data", sendData);
+
+    string Url = Util.GetServerUrl(GameManager.Instance.GetServerType());
+
+    using (UnityWebRequest www = UnityWebRequest.Post(Url, formData))
     {
-        Debug.LogError($"HTTP Error : {request.error}");
-        return string.Empty;
+        yield return www.SendWebRequest();
+
+        string PacketTitle = $"[{MakePacketType(packetType, contentsType, subType)}]";
+        Debug.LogWarning($"<color=#57DE59>{PacketTitle}</color>");
+
+        prevPacketType = PacketType.None;
+        prevContentsType = ContentsType.None;
+        prevSubType = -1;
+
+        if (www.result == UnityWebRequest.Result.Success)
+        {
+            ServerPacket RecvPacket = Util.ToObjectJson<ServerPacket>(Util.StringDecompress(www.downloadHandler.text));
+            if (RecvPacket.StateType == PacketState.None)
+            {
+                switch (RecvPacket.PacketType)
+                {
+                    // 직접 데이터를 받아서 처리하는 패킷
+                    case PacketType.GetUserData:
+                        {
+                            GameManager.Instance.LoadUserData(RecvPacket.Data);
+                            receiveAction?.Invoke();
+                        }
+                        break;
+                    
+                    case PacketType.ContentsPacket:
+                        {
+                            yield return PacketSystem.ProcessPacket(RecvPacket.Data, receiveAction);
+                        }
+                        break;
+                }
+            }
+            else
+            {
+                OnServerError(www.downloadHandler.text);
+            }
+        }
+        else if (www.result == UnityWebRequest.Result.ConnectionError)
+        {
+            Debug.LogError($"{www.result}, {www.error}");
+            OnConnectionError(packetType, contentsType, subType, Data, receiveAction);
+        }
+        else if (www.result == UnityWebRequest.Result.ProtocolError)
+        {
+            Debug.LogError($"{www.result}, {www.error}");
+            OnServerError(www.downloadHandler.text);
+        }
+        else
+        {
+            Debug.LogError($"{www.result}, {www.error}");
+            OnServerError(www.downloadHandler.text);
+        }
+
+        www.Dispose();
     }
 
-    return request.downloadHandler.text;
+    IsProcess = false;
 }
 ```
 <br/>
 
-- 클라이언트의 네트워크 요청을 한 곳에서 관리하기 위해 `NetworkManager` 구성
+- 클라이언트의 네트워크 요청을 한 곳에서 관리하기 위해 NetworkManager 구성
 
 ```C#
 public partial class NetworkManager : Singleton<NetworkManager>
@@ -108,19 +169,23 @@ public partial class NetworkManager : Singleton<NetworkManager>
                     obj = new GameObject("[Managers]");
                     DontDestroyOnLoad(obj);
                 }
-
+    
                 GameObject managerObj = GameObject.Find("[Managers]/NetworkManager");
                 if (managerObj == null)
                 {
                     managerObj = new GameObject("NetworkManager");
                     managerObj.transform.SetParent(obj.transform);
                 }
-
+    
                 m_Instance = managerObj.GetComponent<NetworkManager>();
                 if (m_Instance == null)
+                {
                     m_Instance = managerObj.AddComponent<NetworkManager>();
+                }
+    
+                m_Instance.CreateInstance();
             }
-
+    
             return m_Instance;
         }
     }
@@ -150,15 +215,18 @@ switch (packetData.contentsType)
 {
     case UserNumberContents.SetEquip:
     {
-        UserNumberData userNumberData = JsonConvert.DeserializeObject<UserNumberData>(packetData.bodyData);
+        string data = packetData.HeaderData.Data;
+        List<int> euqipNumber = ServerUtil.ToObjectJson<List<int>>(data);
 
-        var updateData = await GameMethod.ProcessUserNumberData(accountCode, userNumberData);
-        outBodyData.Add(updateData.Item1);
-        outLogData.Add(updateData.Item2);
+        var userNumberData = await NumberMethod.GetUserNumberData(accountCode);
+        userNumberData.EquipNumber = euqipNumber;
 
+        var updateUserNumberData = await NumberMethod.ProcessUserNumberData(accountCode, userNumberData);
+        outBodyData.Add(updateUserNumberData.Item1);
+        outLogData.Add(updateUserNumberData.Item2);
+    
         outHeaderData = ServerUtil.MakeHeaderData(UserNumberContents.SetEquip, true);
         result = await ServerUtil.MakePacket(packetData.contentsType, outHeaderData, outBodyData);
-
         return new Tuple<PacketState, string>(packetState, result);
     }
 }
@@ -169,31 +237,47 @@ switch (packetData.contentsType)
 
 ```C#
 case UserNumberContents.BuyOneNumber_Random:
-{
-    var userGameData = await GameMethod.GetUserGameData(accountCode);
-
-    if (userGameData.Gold < 2000)
-        return await errorResponse.SetCode(0).BuildAsync();
-
-    userGameData.Gold -= 2000;
-
-    int randomNumber;
-    do
     {
-        randomNumber = Random.Shared.Next(0, 100);
+        var userGameData = await GameMethod.GetUserGameData(accountCode);
+        var userNumberData = await NumberMethod.GetUserNumberData(accountCode);
+
+        // Gold 충분한지 확인
+        if (userGameData.Gold < 2000)
+            return await errorResponse.SetCode(0).BuildAsync();
+
+        // Gold 소모
+        userGameData.Gold -= 2000;
+
+        // 0~99 중 랜덤 숫자 선택 (1~9 는 제외)
+        Random random = new Random();
+        int randomNumber;
+
+        do
+        {
+            randomNumber = random.Next(0, 100);
+        }
+        while (randomNumber >= 1 && randomNumber <= 9);
+
+        List<int> numList = new List<int>();
+        numList.Add(randomNumber);
+
+        // 가지고 있지 않은 숫자라면, 인벤토리 추가
+        if(!userNumberData.NumberInventory.Contains(randomNumber))
+            userNumberData.NumberInventory.Add(randomNumber);
+
+        // 저장
+        var updateUserGameData = await GameMethod.ProcessUserGameData(accountCode, userGameData);
+        outBodyData.Add(updateUserGameData.Item1);
+        outLogData.Add(updateUserGameData.Item2);
+
+        var updateUserNumberData = await NumberMethod.ProcessUserNumberData(accountCode, userNumberData);
+        outBodyData.Add(updateUserNumberData.Item1);
+        outLogData.Add(updateUserNumberData.Item2);
+
+        outHeaderData = ServerUtil.MakeHeaderData(UserNumberContents.BuyOneNumber_Random, true, ServerUtil.ToJson(numList));
+        result = await ServerUtil.MakePacket(packetData.contentsType, outHeaderData, outBodyData);
+        return new Tuple<PacketState, string>(packetState, result);
     }
-    while (randomNumber >= 1 && randomNumber <= 9);
-
-    var updateUserGameData = await GameMethod.ProcessUserGameData(accountCode, userGameData);
-
-    outBodyData.Add(updateUserGameData.Item1);
-    outLogData.Add(updateUserGameData.Item2);
-
-    outHeaderData = ServerUtil.MakeHeaderData(UserNumberContents.SetInventory, true);
-    result = await ServerUtil.MakePacket(packetData.contentsType, outHeaderData, outBodyData);
-
-    return new Tuple<PacketState, string>(packetState, result);
-}
 ```
 <br/>
 <br/>
@@ -201,78 +285,68 @@ case UserNumberContents.BuyOneNumber_Random:
 
 ### 2. Google 로그인 구현 (Universal SDK)
 #### 구현 이유
-- Android 게임에서 Google 계정을 이용한 간편 로그인을 제공하기 위해
-- 로그인만 필요한 현재 프로젝트에서 Firebase Authentication 전체 구조를 도입하는 것은 기능 대비 의존성이 커질 수 있다고 판단
-- Google Play Games Services를 직접 구성하는 방법보다 기존에 사용 경험이 있는 Universal SDK를 통해 로그인 흐름을 단순화
-- Universal SDK에서 전달받은 Google 계정의 고유 ID를 서버의 `AccountCode`로 사용하여 게임 계정과 연결
+- Google 계정을 이용한 간편 로그인을 제공하기 위해
 
 #### 구현 방법
-- 앱 시작 후 Universal SDK 초기화
-- Google 로그인 성공 시 SDK에서 전달받은 고유 ID를 획득
-- 획득한 ID를 `AccountCode`로 서버에 전달하여 기존 계정 조회
+- Google 로그인 성공 시 SDK에서 전달받은 고유 UserID를 획득
+
+```C#
+private async void OnClick_GoogleLogin()
+{
+    UniversalSDK.Ins.Login(LoginType.GOOGLE)
+       .OnSuccess(res =>
+       {
+           Debug.LogWarning("Success Google Login!");
+           Debug.LogWarning($"UserID : {res.UserID}");
+           Debug.LogWarning($"IdToken : {res.IdToken}");
+           Debug.LogWarning($"Name : {res.Name}");
+           Debug.LogWarning($"Email : {res.Email}");
+           Debug.LogWarning($"ImageURL : {res.ImageURL}");
+           Debug.LogWarning($"AuthCode : {res.AuthCode}");
+
+           GameManager.Instance.AccountCode = res.UserID;
+           NetworkManager.Instance.SendPacket(PacketType.GetUserData, receiveAction: EnterLobbyScene);
+       })
+       .OnError(err =>
+       {
+           UIManager.Instance.OpenSystemPopup(new MessageData { Type = PopupType.OkOnly, Message = $"Fail to Google Login. ({err.Code})" });
+           Debug.LogError(err.Code);
+       });
+}
+```
+<br/>
+  
+- 획득한 UserID를 AccountCode로 서버에 전달하여 기존 계정 조회
+
+```C#
+public static async Task<UserData_Common> GetUserCommonData(string accountCode)
+{
+    return await UserDB.GetCollection<UserData_Common>(nameof(UserCollection.UserCommonData)).Find(uInfo => uInfo.AccountCode == accountCode).SingleOrDefaultAsync();
+}
+```
+<br/>
+
 - 데이터가 존재하지 않으면 신규 유저 데이터를 생성하고, 존재하면 기존 데이터를 로드
-- 클라이언트에서는 Google 인증만 담당하고 실제 게임 데이터는 서버와 MongoDB에서 관리
 
 ```C#
-public void LoginGoogle()
+public static async Task<UserData_Common> GetUserCommonDataToConnect(string accountCode)
 {
-    // Universal SDK Google Login 호출
-    UniversalSDK.LoginGoogle(OnGoogleLoginResult);
-}
-
-private async void OnGoogleLoginResult(bool isSuccess, string googleId)
-{
-    if (!isSuccess || string.IsNullOrEmpty(googleId))
+    if (await ServerDataBase.IsExistCommonData(accountCode))
     {
-        Debug.LogError("Google Login Failed");
-        return;
+        UserData_Common uInfo = await CheckInvalidData(accountCode);
+
+        await ServerDataBase.SetUserCommonData(accountCode, uInfo);
+        return uInfo;
     }
-
-    await LoginServer(googleId);
-}
-
-private async UniTask LoginServer(string accountCode)
-{
-    LoginRequest request = new LoginRequest()
+    else
     {
-        AccountCode = accountCode
-    };
-
-    await NetworkManager.Instance.SendLogin(request);
+        return await CreateUserCommonData(accountCode);
+    }
 }
 ```
 <br/>
 
-- 서버에서는 `AccountCode`를 기준으로 MongoDB의 유저 데이터를 조회
-
-```C#
-public async Task<UserCommonData> GetUserCommonData(string accountCode)
-{
-    return await UserCommonCollection
-        .Find(x => x.AccountCode == accountCode)
-        .SingleOrDefaultAsync();
-}
-```
-<br/>
-
-- 빠른 계정 검색을 위해 `AccountCode`에 Ascending Index 생성
-
-```C#
-var indexKeysDefinition = Builders<UserCommonData>.IndexKeys
-    .Ascending(x => x.AccountCode);
-
-var indexModel = new CreateIndexModel<UserCommonData>(
-    indexKeysDefinition,
-    new CreateIndexOptions
-    {
-        Background = true
-    });
-
-await UserCommonCollection.Indexes.CreateOneAsync(indexModel);
-```
-<br/>
-
-- Google 로그인 정보와 게임 데이터를 분리함으로써 추후 다른 로그인 방식이 추가되어도 서버의 유저 데이터 구조를 최대한 유지할 수 있도록 구성
+- 클라이언트에서는 Google 인증만 담당하고 실제 게임 데이터는 서버와 MongoDB에서 관리
 <br/>
 <br/>
 
@@ -288,47 +362,9 @@ await UserCommonCollection.Indexes.CreateOneAsync(indexModel);
 - AWS EC2 인스턴스 생성
 - 인스턴스 타입은 `t4g.small`, 아키텍처는 `ARM64` 선택
 - ASP.NET Core 서버를 Linux ARM64 환경에 맞게 Publish
-- Live 환경용 `appsettings`를 분리하여 MongoDB 접속 정보를 관리
+- Live 환경용 appsettings를 분리하여 MongoDB 접속 정보를 관리
 - 서버 실행 후 Android 클라이언트의 Live 서버 주소를 AWS 서버 주소로 연결
-
-```JSON
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
-
-  "MongoDB": "mongodb://127.0.0.1:27017"
-}
-```
-<br/>
-
-- .NET 서버를 ARM64 Linux 환경으로 Publish
-
-```bash
-dotnet publish -c Release -r linux-arm64 --self-contained false
-```
-<br/>
-
-- 서버 실행 환경에 따라 Test / Live 설정 파일을 분리
-
-```C#
-var builder = WebApplication.CreateBuilder(args);
-
-builder.Configuration
-    .SetBasePath(Directory.GetCurrentDirectory())
-    .AddJsonFile("appsettings.json", optional: false)
-    .AddJsonFile(
-        $"appsettings.{builder.Environment.EnvironmentName}.json",
-        optional: true
-    );
-```
-<br/>
-
 - AWS 보안 그룹에서 실제 서버 통신에 필요한 포트만 허용하여 외부 접근 범위를 제한
-- 서버 재실행 이후에도 동일한 Live 설정을 사용할 수 있도록 Production 환경을 기준으로 배포 구조 구성
 <br/>
 <br/>
 
@@ -338,7 +374,7 @@ builder.Configuration
 #### 구현 이유
 - 단순히 숫자가 내려오는 방식만 반복하면 플레이가 빠르게 단조로워질 수 있기 때문에 블록별 특성을 추가
 - 하나의 Block 클래스를 기반으로 여러 특성을 조합할 수 있도록 설계하여 새로운 패턴을 쉽게 확장하기 위해
-- 이번 프로젝트의 개발 목표 중 하나인 AI 활용 경험을 위해 블록 타입 아이디어 및 구현 과정에 AI를 적극 활용
+- 이번 프로젝트의 개발 목표 중 하나인 AI 적극 활용 경험을 위해 블록 타입 아이디어 및 구현 과정에 AI를 적극 활용
 
 #### 구현 방법
 - 블록 특성을 `[System.Flags]` enum으로 정의
@@ -348,21 +384,75 @@ builder.Configuration
 [System.Flags]
 public enum BlockType
 {
-    None     = 0,
-    Rotation = 1 << 0,
-    Move     = 1 << 1,
-    Armor    = 1 << 2,
-    Ghost    = 1 << 3,
+    None = 0,
+    Rotation = 1 << 0,  // 1
+    Move = 1 << 1,  // 2
+    Armor = 1 << 2,  // 4
+    Ghost = 1 << 3,  // 8
 }
 ```
 <br/>
 
-- 비트 연산을 이용하여 블록이 특정 타입을 가지고 있는지 확인
+- 랜덤으로 특성 개수를 결정
 
 ```C#
-public bool HasType(BlockType type)
+private BlockType GetRandomBlockType()
 {
-    return (m_BlockType & type) != 0;
+    BlockType[] blockTypes =
+        {
+        BlockType.Rotation,
+        BlockType.Move,
+        BlockType.Armor,
+        BlockType.Ghost
+    };
+
+    // 0 ~ 99 중 하나
+    int randomValue = RandomUtil.GetRandomIndex(0, 99);
+
+    // 일반 블록 : 40%
+    if (randomValue < 40)
+    {
+        return BlockType.None;
+    }
+
+    // 특성 개수 결정
+    // 40 ~ 84 : 특성 1개 = 45%
+    // 85 ~ 94 : 특성 2개 = 10%
+    // 95 ~ 99 : 특성 3개 = 5%
+    int typeCount;
+
+    if (randomValue < 85)
+    {
+        typeCount = 1;
+    }
+    else if (randomValue < 95)
+    {
+        typeCount = 2;
+    }
+    else
+    {
+        typeCount = 3;
+    }
+
+    BlockType result = BlockType.None;
+    List<int> selectedIndexes = new List<int>();
+
+    while (selectedIndexes.Count < typeCount)
+    {
+        int randomIndex =
+            RandomUtil.GetRandomIndex(0, blockTypes.Length - 1);
+
+        // 이미 선택한 타입이면 다시 뽑기
+        if (selectedIndexes.Contains(randomIndex))
+            continue;
+
+        selectedIndexes.Add(randomIndex);
+
+        // BlockType 추가
+        result |= blockTypes[randomIndex];
+    }
+
+    return result;
 }
 ```
 <br/>
@@ -370,54 +460,33 @@ public bool HasType(BlockType type)
 - 기본 Block 로직은 공통으로 유지하고 타입별 동작만 분리
 
 ```C#
-private void Update()
+public void Update()
 {
-    transform.position += Vector3.down * m_MoveSpeed * Time.deltaTime;
+    // 기본 하강
+    MoveDown();
 
-    if (HasType(BlockType.Rotation))
-        UpdateRotation();
-
-    if (HasType(BlockType.Move))
-        UpdateMove();
-
-    if (HasType(BlockType.Ghost))
-        UpdateGhost();
-
-    if (transform.position.y <= -3.5f)
-        Destroy(gameObject);
-}
-```
-<br/>
-
-- Armor 타입은 기본 블록보다 높은 HP를 가지도록 구성
-
-```C#
-private void SetBlockType()
-{
-    m_Hp = 1;
-
-    if (HasType(BlockType.Armor))
-        m_Hp += 1;
-}
-```
-<br/>
-
-- 정답 계산 결과와 동일한 숫자를 가진 블록을 찾아 Damage 처리
-
-```C#
-private void CheckBlockResult(int blockNumber)
-{
-    Block[] blocks = FindObjectsByType<Block>(FindObjectsSortMode.None);
-
-    foreach (Block block in blocks)
+    // Rotation
+    if ((m_BlockType & BlockType.Rotation) != 0)
     {
-        if (block.Number != blockNumber)
-            continue;
+        UpdateRotation();
+    }
 
-        block.Damage();
-        AddScore(100);
-        SetFormula();
-        return;
+    // Move
+    if ((m_BlockType & BlockType.Move) != 0)
+    {
+        UpdateMove();
+    }
+
+    // Armor
+    if ((m_BlockType & BlockType.Armor) != 0)
+    {
+        UpdateArmor();
+    }
+
+    // Ghost
+    if ((m_BlockType & BlockType.Ghost) != 0)
+    {
+        UpdateGhost();
     }
 }
 ```
@@ -432,7 +501,7 @@ private void CheckBlockResult(int blockNumber)
 ### 5. HTTP 통신 방식의 랭킹 구현
 
 #### 구현 이유
-- 이전 프로젝트에서는 뒤끝 서버의 랭킹 기능을 사용했지만, 이번에는 직접 구축한 서버와 DB만으로 랭킹 시스템을 구현하기 위해
+- 직접 구축한 서버와 DB만으로 랭킹 시스템을 구현하기 위해
 - 별도의 랭킹 SDK 의존성 없이 게임 데이터와 동일한 서버 구조에서 관리하기 위해
 - 점수 저장 및 랭킹 조회는 프레임 단위 실시간성이 필요하지 않기 때문에 HTTP 통신으로 충분하다고 판단
 
@@ -440,16 +509,69 @@ private void CheckBlockResult(int blockNumber)
 - 게임 종료 후 최고 점수 갱신이 필요한 경우 서버에 점수 저장 요청
 - 서버는 클라이언트가 전달한 계정을 기준으로 유저 데이터를 조회하고 점수를 저장
 - 랭킹 화면 진입 시 클라이언트에서 랭킹 조회 HTTP 요청
-- 서버에서는 MongoDB의 Score를 기준으로 내림차순 정렬하여 상위 유저 목록 반환
+- 서버에서는 MongoDB의 Score/Time 기준으로 내림차순 정렬하여 상위 유저 목록 반환
 
 ```C#
-public async Task<List<UserGameData>> GetRanking(int count)
+public static async Task<UserRankInfo> GetUserRankInfo(string accountCode)
 {
-    return await UserGameCollection
-        .Find(Builders<UserGameData>.Filter.Empty)
-        .SortByDescending(x => x.Score)
-        .Limit(count)
-        .ToListAsync();
+    // 전체 유저 기본 정보 가져오기
+    var commonList = await UserDB.GetCollection<UserData_Common>(nameof(UserCollection.UserCommonData)).Find(Builders<UserData_Common>.Filter.Empty).ToListAsync();
+
+    // 랭킹 계산용 리스트
+    var rankList = new List<(UserData_Common CommonData, int Score, float Time)>();
+
+    foreach (var commonData in commonList)
+    {
+        // 게임 데이터 가져오기
+        var gameData = await GameMethod.GetUserGameData(commonData.AccountCode);
+
+        if (gameData == null)
+            continue;
+
+        rankList.Add((commonData, gameData.Score, gameData.Time));
+    }
+
+    // Score 높은 순, Time 높은 순으로 정렬
+    var sortedList = rankList.OrderByDescending(data => data.Score).ThenByDescending(data => data.Time).ToList();
+
+    // 해당 유저 위치 검색
+    int rank = sortedList.FindIndex(data => data.CommonData.AccountCode == accountCode);
+
+    UserRankInfo rankInfo = new UserRankInfo();
+
+    // 유저 기본 데이터
+    var userCommonData = await GetUserCommonData(accountCode);
+    if (userCommonData != null)
+    {
+        rankInfo.NickName = userCommonData.NickName;
+        rankInfo.ImageNum = userCommonData.ImageNum;
+    }
+
+    // 유저의 Number 데이터
+    var userNumberData = await NumberMethod.GetUserNumberData(accountCode);
+    if (userNumberData != null)
+    {
+        rankInfo.EquipNumber = userNumberData.EquipNumber;
+    }
+
+    // 랭킹에 없는 경우
+    if (rank == -1)
+    {
+        rankInfo.Rank = -1;
+
+        var userGameData = await GameMethod.GetUserGameData(accountCode);
+        rankInfo.Score = userGameData != null ? userGameData.Score : 0;
+        rankInfo.Time = userGameData != null ? userGameData.Time : 0f;
+    }
+    // 랭킹에 있는 경우
+    else
+    {
+        rankInfo.Rank = rank + 1;
+        rankInfo.Score = sortedList[rank].Score;
+        rankInfo.Time = sortedList[rank].Time;
+    }
+
+    return rankInfo;
 }
 ```
 <br/>
@@ -457,36 +579,14 @@ public async Task<List<UserGameData>> GetRanking(int count)
 - 서버에서 받은 유저 데이터를 랭킹 데이터 형태로 가공
 
 ```C#
-public class RankingData
+public class UserRankInfo
 {
-    public int Rank;
-    public string NickName;
-    public int Score;
-    public string ImageNum;
-}
-```
-<br/>
-
-```C#
-public async Task<List<RankingData>> MakeRankingData(int count)
-{
-    List<UserGameData> users = await GetRanking(count);
-    List<RankingData> result = new List<RankingData>();
-
-    for (int i = 0; i < users.Count; ++i)
-    {
-        UserCommonData common = await GetUserCommonData(users[i].AccountCode);
-
-        result.Add(new RankingData
-        {
-            Rank = i + 1,
-            NickName = common.NickName,
-            Score = users[i].Score,
-            ImageNum = common.ImageNum
-        });
-    }
-
-    return result;
+    public int Rank = 0;
+    public string NickName = string.Empty;
+    public int Score = 0;
+    public float Time = 0f;
+    public List<int> EquipNumber = new List<int>();
+    public string ImageNum = string.Empty;
 }
 ```
 <br/>
@@ -494,20 +594,12 @@ public async Task<List<RankingData>> MakeRankingData(int count)
 - 클라이언트는 서버에서 받은 순위 데이터를 기반으로 랭킹 슬롯 생성
 
 ```C#
-private void SetRanking(List<RankingData> rankingData)
+for (int i = 0; i < m_UsersRankInfo.Count; ++i)
 {
-    for (int i = 0; i < rankingData.Count; ++i)
-    {
-        GameObject obj = Instantiate(m_RankingSlot, Trans_Content);
-        Slot_Ranking slot = obj.GetComponent<Slot_Ranking>();
-
-        slot.SetSlot(rankingData[i]);
-    }
+    GameObject slotObj = Instantiate(m_SlotRankingObj, Trans_Content_RankingSlot);
+    slotObj.GetComponent<Slot_Ranking>().SetSlot(m_UsersRankInfo[i]);
 }
 ```
-<br/>
-
-- 랭킹 데이터 또한 일반 유저 데이터와 동일한 HTTP Packet 구조를 사용하도록 하여 별도의 네트워크 시스템을 추가하지 않고 기존 구조를 재사용
 <br/>
 <br/>
 
