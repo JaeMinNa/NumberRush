@@ -10,7 +10,7 @@
  - 게임 이름 : Number Rush
  - 플랫폼 : Android
  - 장르 : 2D 퍼즐 디펜스 캐주얼 수집
- - 개발 기간 : 25.07.28 ~ 25.09.05
+ - 개발 기간 : 26.07.28 ~ 26.09.05
 <br/>
 
 ## 🎯 개발 목표
@@ -57,1314 +57,657 @@
 ### 1. HTTP 서버 통신 구현
 
 #### 구현 이유
-- 프로젝트의 UI를 체계적으로 관리하기 위해
-- 유지보수성과 확장성을 극대화하기 위해
-- 게임의 규모가 커질수록 UI 요소를 개별적으로 제어하기 힘들기 때문에
+- 이전 개인 프로젝트에서는 뒤끝 서버, Photon과 같은 BaaS / 네트워크 솔루션을 사용했지만, 이번 프로젝트에서는 직접 서버를 구축하고 클라이언트와 서버가 통신하는 전체 흐름을 경험하기 위해 구현
+- 로그인, 유저 데이터 저장, 숫자 구매 및 장착, 랭킹처럼 실시간 동기화가 필요하지 않은 기능이 중심이기 때문에 HTTP Request / Response 방식이 프로젝트에 적합하다고 판단
+- 클라이언트에서 데이터를 직접 저장하지 않고 서버에서 검증 및 처리하도록 구성하여 데이터 위변조 가능성을 줄이기 위해
+- 향후 서버 기능이 추가되더라도 ContentsType을 기준으로 기능을 확장할 수 있도록 공통 통신 구조를 설계
 
 #### 구현 방법
-- 프로젝트 내 모든 UI 오브젝트가 공통적으로 가져야 할 동작을 추상화(Abstract)한 베이스 클래스
+- Unity 클라이언트에서는 `UnityWebRequest`를 사용하여 서버에 HTTP 요청
+- 요청 데이터는 Header / Body 구조로 구성하고 JSON으로 직렬화하여 서버로 전송
+- 서버 응답 역시 공통 Packet 형태로 받아 Header를 확인한 뒤 ContentsType에 맞는 데이터를 역직렬화하여 적용
+- 네트워크 요청은 `UniTask` 기반 비동기 방식으로 처리하여 메인 스레드의 흐름을 막지 않도록 구성
+
 ```C#
-public abstract class UIElement : MonoBehaviour
+public async UniTask<string> SendPost(string url, string jsonData)
 {
-    public string UIName = string.Empty;
-    public RectTransform RectTransform;
-    public UI UIParent;
+    byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(jsonData);
 
-    // 초기화
-    public abstract void Init();
-    // UI가 열릴 때 호출
-    public abstract void OnOpen(List<object> Args);
-    // UI가 닫힐 때 호출
-    public abstract void OnClose();
-    // UI 갱신
-    public abstract void OnRefresh();
+    using UnityWebRequest request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST);
+    request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+    request.downloadHandler = new DownloadHandlerBuffer();
+    request.SetRequestHeader("Content-Type", "application/json");
 
-    #region Async
-    public virtual async UniTask InitAsync()
+    await request.SendWebRequest();
+
+    if (request.result != UnityWebRequest.Result.Success)
     {
-        await UniTask.Yield();
+        Debug.LogError($"HTTP Error : {request.error}");
+        return string.Empty;
     }
 
-    public virtual async UniTask OnOpenAsync(List<object> Args)
-    {
-        await UniTask.Yield();
-    }
-
-    public virtual async UniTask OnCloseAsync()
-    {
-        await UniTask.Yield();
-    }
-
-    public virtual async UniTask OpenAction()
-    {
-        await UniTask.Yield();
-    }
-
-    public virtual async UniTask CloseAction()
-    {
-        await UniTask.Yield();
-    }
-    #endregion
+    return request.downloadHandler.text;
 }
 ```
 <br/>
 
-- 캔버스들을 자동으로 찾아 Dictionary에 저장하여, UI 계층 구조를 명확하게 하고 정렬 순서 충돌 방지
+- 클라이언트의 네트워크 요청을 한 곳에서 관리하기 위해 `NetworkManager` 구성
+
 ```C#
-public void SetUIRoot(GameObject Obj)
+public partial class NetworkManager : Singleton<NetworkManager>
 {
-    m_UIRootObjects.Clear();
-
-    m_UIRootObjects.Add(UI.Root, Obj.GetComponent<Canvas>());
-
-    Transform Panel = null;
-    Panel = Obj.transform.Find("Background");
-    if (Panel != null)
-        m_UIRootObjects.Add(UI.BackGround, Panel.GetComponent<Canvas>());
-
-    Panel = Obj.transform.Find("Main");
-    if (Panel != null)
-        m_UIRootObjects.Add(UI.Main, Panel.GetComponent<Canvas>());
-
-    Panel = Obj.transform.Find("Top");
-    if (Panel != null)
-        m_UIRootObjects.Add(UI.Top, Panel.GetComponent<Canvas>());
-
-    Panel = Obj.transform.Find("Popup");
-    if (Panel != null)
-        m_UIRootObjects.Add(UI.Popup, Panel.GetComponent<Canvas>());
-
-    Panel = Obj.transform.Find("Mask");
-    if (Panel != null)
-        m_UIRootObjects.Add(UI.Mask, Panel.GetComponent<Canvas>());
-
-    Panel = Obj.transform.Find("Fade");
-    if (Panel != null)
-        m_UIRootObjects.Add(UI.Fade, Panel.GetComponent<Canvas>());
-
-    Panel = Obj.transform.Find("TouchBlock");
-    if (Panel != null)
-        m_UIRootObjects.Add(UI.TouchBlock, Panel.GetComponent<Canvas>());
-
-    m_EventSystem = Obj.transform.Find("EventSystem").GetComponent<EventSystem>();
-
-    SwitchRoot();
-}
-```
-<br/>
-
-- 제네릭 기반의 UI 동적 로딩
-```C#
-public T Open<T>(UI Depth, string PrefabPath, List<object> Args = null, bool SetFirst = false, bool IsBundle = false) where T : UIElement
-{
-    if (m_UIDictionary.ContainsKey(typeof(T)))
+    public static NetworkManager Instance
     {
-        if (m_UIDictionary[typeof(T)] != null)
+        get
         {
-            m_UIDictionary[typeof(T)].gameObject.SetActive(true);
-            m_UIDictionary[typeof(T)].OnOpen(Args);
-            OnOpen?.Invoke(Depth, m_UIDictionary[typeof(T)]);
-            return m_UIDictionary[typeof(T)] as T;
-        }
-        else
-        {
-            m_UIDictionary.TryRemove(typeof(T), out _);
-        }
-    }
-
-    GameObject prefab;
-
-    if (IsBundle)
-    {
-        PrefabPath = $"Prefab/{PrefabPath}";
-        string AssetName = PrefabPath.Split('/').Last();
-        prefab = ResourceLoader.LoadAsset<GameObject>(PrefabPath, AssetName);
-    }
-    else
-    {
-        prefab = ResourceLoader.LoadAssetResources<GameObject>(PrefabPath);
-    }
-
-    if (prefab == null)
-        return null;
-
-    GameObject obj = Instantiate(prefab, GetRootTransform(Depth));
-    T comp = obj.GetComponent<T>();
-
-    if (comp == null)
-        return null;
-
-    m_UIDictionary.TryAdd(typeof(T), comp);
-    m_UIDictionary[typeof(T)].UIParent = Depth;
-    m_UIDictionary[typeof(T)].UIName = PrefabPath;
-    m_UIDictionary[typeof(T)].RectTransform = obj.GetComponent<RectTransform>();
-
-    if (SetFirst)
-        m_UIDictionary[typeof(T)].RectTransform.SetAsFirstSibling();
-
-    m_UIDictionary[typeof(T)].Init();
-    m_UIDictionary[typeof(T)].OnOpen(Args);
-    OnOpen?.Invoke(Depth, m_UIDictionary[typeof(T)]);
-
-    return comp;
-}
-```
-<br/>
-
-- UI 닫기 기능 관리
-```C#
-public void Close<T>(bool IsDestroy = true) where T : UIElement
-{
-    if (m_UIDictionary.ContainsKey(typeof(T)) && m_UIDictionary[typeof(T)] != null)
-    {
-        UIElement temp = m_UIDictionary[typeof(T)];
-        temp.OnClose();
-
-        if (IsDestroy)
-        {
-            m_UIDictionary.TryRemove(typeof(T), out _);
-            Destroy(temp.gameObject);
-        }
-        else
-            temp.gameObject.SetActive(false);
-    }
-}
-```
-<br/>
-
-- UI 전체 자동 업데이트를 위한 Refresh 기능
-```C#
- public void Refresh()
- {
-     foreach (var Elements in m_UIDictionary)
-     {
-         if (Elements.Value != null && Elements.Value.gameObject.activeInHierarchy)
-             Elements.Value.OnRefresh();
-     }
- }
-```
-<br/>
-
-- UI를 레이어별로 구분하여 UIManager가 UI를 정확한 우선순위와 규칙에 따라 배치할 수 있도록 Root UI 구조를 설계
-<img src="https://github.com/user-attachments/assets/1cee13a4-3d1a-4adb-a381-8b8ee7ef2b05" width="50%"/>
-<br/>
-<br/>
-
-### 2. SystemPopup 구현
-<img src="https://github.com/user-attachments/assets/e890102f-a2c2-4371-9139-193bb282d0f6" width="50%"/>
-
-#### 구현 이유
-- 반복적으로 사용되는 공통 팝업 UI를 호출하기 위해
-- 일관된 팝업 생성 로직으로 UI 관리의 안정성을 높히기 위해
-
-#### 구현 방법
-- SystemPopup 호출
-```C#
-public void OpenSystemPopup(MessageData Data)
-{
-    Open<Popup_System>(UI.Popup, "Prefabs/UI/Popup/Popup_System", new List<object> { Data });
-}
-```
-<br/>
-
-- Popup 유형을 enum으로 정의
-```C#
-public enum PopupType
-{
-    None,
-
-    OkOnly,
-    OkCancel,
-
-    Max
-}
-```
-<br/>
-
-- Popup 에 필요한 정보를 class로 정의
-```C#
-public class MessageData
-{
-    public PopupType Type;
-    public string Title;
-    public string Message;
-    public UnityAction OkAction;
-}
-```
-<br/>
-
-- PopupType에 따른 UI 동적 구성 및 버튼 적용
-```C#
-public override void OnOpen(List<object> Args)
-{
-    if (Args.Count == 0)
-    {
-        Debug.LogWarning("MessageData is Null");
-        return;
-    }
-
-    MyData = Args[0] as MessageData;
-
-    if (!string.IsNullOrEmpty(MyData.Title))
-    {
-        Text_Title.text = MyData.Title;
-    }
-    else
-    {
-        Text_Title.text = "Notice";
-    }
-    
-    Text_Message.text = MyData.Message;
-
-    switch (MyData.Type)
-    {
-        case PopupType.OkOnly:
+            if (m_Instance == null && Application.isPlaying)
             {
-                Btn_OK.gameObject.SetActive(true);
-                Btn_Cancel.gameObject.SetActive(false);
+                GameObject obj = GameObject.Find("[Managers]");
+                if (obj == null)
+                {
+                    obj = new GameObject("[Managers]");
+                    DontDestroyOnLoad(obj);
+                }
+
+                GameObject managerObj = GameObject.Find("[Managers]/NetworkManager");
+                if (managerObj == null)
+                {
+                    managerObj = new GameObject("NetworkManager");
+                    managerObj.transform.SetParent(obj.transform);
+                }
+
+                m_Instance = managerObj.GetComponent<NetworkManager>();
+                if (m_Instance == null)
+                    m_Instance = managerObj.AddComponent<NetworkManager>();
             }
-            break;
-        case PopupType.OkCancel:
-            {
-                Btn_OK.gameObject.SetActive(true);
-                Btn_Cancel.gameObject.SetActive(true);
-            }
-            break;
-    }
-}
-```
-<br/>
 
-### 3. Photon을 이용한 멀티 플레이 구현
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/acf17504-67c4-405c-9ca6-ee35ce4e7c47" width="49%"/>
-  <img src="https://github.com/user-attachments/assets/493a5f77-5be8-4938-ba49-e5765738ac92" width="49%"/>
-</p>
-
-#### 구현 이유
-- 서버를 직접 구축하지 않고도 실시간 멀티플레이 기능을 구현하기 위해
-- 서버리스(Serverless) 구조 기반의 게임을 개발하기 위해
-
-#### 구현 방법
-- OnPhotonSerializeView를 통한 프레임 단위 동기화로 마스터클라이언트에서 계산한 게임 상태값을 상대 플레이어에게 빠르게 전달
-- 실시간으로 데이터를 송수신해야하는 준비여부, 선택 스킬, 남은 턴 시간 데이터를 동기화 함
-```C#
- public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
- {
-     if (m_pvpModule == null)
-     {
-         m_pvpModule = BattleModule.Instance as PVPModule;
-         if (m_pvpModule == null)
-             return;
-     }
-
-     // 데이터를 전송할 때
-     if (stream.IsWriting)
-     {
-         // Ingame Data
-         stream.SendNext(m_pvpModule.IsMyReady);
-         stream.SendNext(m_pvpModule.MySelectBtnNum);
-         stream.SendNext(PhotonNetwork.IsMasterClient? m_pvpModule.CurTime : 0);
-     }
-     // 데이터를 받을 때
-     else
-     {
-         // Ingame Data
-         m_pvpModule.IsEnemyReady = (bool)stream.ReceiveNext();
-         m_pvpModule.EnemySelectBtnNum = (int)stream.ReceiveNext();
-         float curTime = (float)stream.ReceiveNext();
-
-         if (!PhotonNetwork.IsMasterClient)
-             m_pvpModule.CurTime = curTime;
-     }
- }
-```
-<br/>
-
-- 다른 클라이언트의 함수를 직접 호출하기 위해 RPC 함수 사용
-- RPC 함수로 실시간 이모티콘 전송 기능을 구현
-```C#
-[PunRPC]
-public void RPCPlayEmoticon(bool isLeft, int num)
-{
-    if (m_IngameWindow == null)
-        m_IngameWindow = UIManager.Instance.GetOpened<IngameWindow>();
-
-    if (m_IngameWindow != null)
-        m_IngameWindow.SetEmoticon(isLeft, num);
-}
-```
-<br/>
-
-### 4. 금칙어 적용
-<img src="https://github.com/user-attachments/assets/8650e8bd-839c-4ff8-9b9a-ee5ee70f5c0b" width="50%"/>
-
-#### 구현 이유
-- 부적절한 닉네임 사용을 제한하기 위해
-- 유지보수와 업데이트가 쉽기 때문에 CSV 파일 기반 금칙어 구현
-
-#### 구현 방법
-- CSV 파일로 관리되는 금칙어 목록을 읽어와 메모리에 로드
-```C#
-private void LoadBannedWords()
-{
-    if (m_BannedWords.Count > 0) return;
-
-    TextAsset csvFile = ResourceLoader.LoadAssetResources<TextAsset>("CSV/BannedWord/BannedWord");
-    if (csvFile == null)
-    {
-        Debug.LogError("금칙어 CSV 파일을 찾을 수 없습니다.");
-        return;
-    }
-
-    // 줄 단위로 분리
-    string[] lines = csvFile.text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-
-    foreach (var line in lines)
-    {
-        string word = line.Trim();
-        if (!string.IsNullOrEmpty(word))
-        {
-            // 중복 방지
-            if (!m_BannedWords.Contains(word))
-                m_BannedWords.Add(word);
+            return m_Instance;
         }
     }
-
-    Debug.Log($"금칙어 {m_BannedWords.Count}개 로드 완료");
 }
 ```
 <br/>
 
-- 금칙어가 포함되어 있는지 체크
+- Editor / Live 환경에 따라 서버 주소를 분리하여 개발 환경과 실제 서비스 환경을 구분
+
 ```C#
-private bool IsBannedNickName(string nickname)
+public string GetServerAddress()
 {
-    foreach (var banned in m_BannedWords)
-    {
-        if (nickname.Contains(banned, StringComparison.OrdinalIgnoreCase))
-            return true;
-    }
-    return false;
+#if UNITY_EDITOR
+    return ServerAddress.Test;
+#else
+    return ServerAddress.Live;
+#endif
 }
 ```
 <br/>
 
-### 5. 뒤끝 서버를 이용한 랭킹 구현
-<img src="https://github.com/user-attachments/assets/ca5b51b5-cf98-40a8-a349-d212802c868f" width="50%"/>
+- 서버는 ASP.NET Core 기반으로 구성하고 클라이언트가 전달한 ContentsType에 따라 필요한 로직을 처리
+- MongoDB에서 유저 데이터를 조회하고, 서버에서 데이터를 검증/수정한 뒤 결과를 다시 클라이언트에 전달
 
+```C#
+switch (packetData.contentsType)
+{
+    case UserNumberContents.SetEquip:
+    {
+        UserNumberData userNumberData = JsonConvert.DeserializeObject<UserNumberData>(packetData.bodyData);
+
+        var updateData = await GameMethod.ProcessUserNumberData(accountCode, userNumberData);
+        outBodyData.Add(updateData.Item1);
+        outLogData.Add(updateData.Item2);
+
+        outHeaderData = ServerUtil.MakeHeaderData(UserNumberContents.SetEquip, true);
+        result = await ServerUtil.MakePacket(packetData.contentsType, outHeaderData, outBodyData);
+
+        return new Tuple<PacketState, string>(packetState, result);
+    }
+}
+```
+<br/>
+
+- 재화 구매와 같은 중요한 데이터는 클라이언트가 결과값을 결정하지 않고 서버에서 현재 데이터를 다시 조회한 뒤 검증
+
+```C#
+case UserNumberContents.BuyOneNumber_Random:
+{
+    var userGameData = await GameMethod.GetUserGameData(accountCode);
+
+    if (userGameData.Gold < 2000)
+        return await errorResponse.SetCode(0).BuildAsync();
+
+    userGameData.Gold -= 2000;
+
+    int randomNumber;
+    do
+    {
+        randomNumber = Random.Shared.Next(0, 100);
+    }
+    while (randomNumber >= 1 && randomNumber <= 9);
+
+    var updateUserGameData = await GameMethod.ProcessUserGameData(accountCode, userGameData);
+
+    outBodyData.Add(updateUserGameData.Item1);
+    outLogData.Add(updateUserGameData.Item2);
+
+    outHeaderData = ServerUtil.MakeHeaderData(UserNumberContents.SetInventory, true);
+    result = await ServerUtil.MakePacket(packetData.contentsType, outHeaderData, outBodyData);
+
+    return new Tuple<PacketState, string>(packetState, result);
+}
+```
+<br/>
+<br/>
+
+
+### 2. Google 로그인 구현 (Universal SDK)
 #### 구현 이유
-- 서버를 직접 구축하지 않고도 안정적이고 관리 가능한 랭킹 구현을 위해
+- Android 게임에서 Google 계정을 이용한 간편 로그인을 제공하기 위해
+- 로그인만 필요한 현재 프로젝트에서 Firebase Authentication 전체 구조를 도입하는 것은 기능 대비 의존성이 커질 수 있다고 판단
+- Google Play Games Services를 직접 구성하는 방법보다 기존에 사용 경험이 있는 Universal SDK를 통해 로그인 흐름을 단순화
+- Universal SDK에서 전달받은 Google 계정의 고유 ID를 서버의 `AccountCode`로 사용하여 게임 계정과 연결
 
 #### 구현 방법
-- 뒤끝 서버 설치 및 서버 접속
-```C#
-private void BackendSetup()
-{
-BackendReturnObject bro = Backend.Initialize(true);
-
-if (bro.IsSuccess())
-{
-    Debug.Log("뒤끝 서버 연동 성공 : " + bro); // 성공일 경우 statusCode 204 Success
-}
-else
-{
-    Debug.LogError("뒤끝 서버 연동 실패 : " + bro); // 실패일 경우 statusCode 400대 에러 발생
-}
-}
-```
-<br/>
-
-- 뒤끝 서버에서 비교할 데이터의 데이터 테이블 생성
-<img src="https://github.com/user-attachments/assets/e9fc4d4c-2d22-4af5-bf05-ffef142f4600" width="50%"/>
-<br/>
-<br/>
+- 앱 시작 후 Universal SDK 초기화
+- Google 로그인 성공 시 SDK에서 전달받은 고유 ID를 획득
+- 획득한 ID를 `AccountCode`로 서버에 전달하여 기존 계정 조회
+- 데이터가 존재하지 않으면 신규 유저 데이터를 생성하고, 존재하면 기존 데이터를 로드
+- 클라이언트에서는 Google 인증만 담당하고 실제 게임 데이터는 서버와 MongoDB에서 관리
 
 ```C#
-// 데이터 테이블에 추가하는 함수
-public void InsertData()
+public void LoginGoogle()
 {
-    Param param = GetUserDataParam();
-    BackendReturnObject bro = Backend.GameData.Insert("USER_DATA", param); // USER_DATA 테이블 이름
-
-    if (bro.IsSuccess())
-    {
-        Debug.LogWarning("뒤끝 서버 데이터 추가 성공!");
-    }
-    else
-    {
-        Debug.LogWarning("뒤끝 서버 데이터 추가 실패");
-    }
+    // Universal SDK Google Login 호출
+    UniversalSDK.LoginGoogle(OnGoogleLoginResult);
 }
 
-// Param : 데이터를 송수신할 때 사용하는 class
-private Param GetUserDataParam()
+private async void OnGoogleLoginResult(bool isSuccess, string googleId)
 {
-    Param param = new Param();
-    param.Add("RankPoint", DataManager.Instance.GetMyUserData().UserCommonData.RankPoint);
-    param.Add("CharacterImg", DataManager.Instance.GetMyUserData().UserCommonData.Image);
-
-    return param;
-}
-```
-<br/>
-
-- 뒤끝 서버 랭킹 추가
-<img src="https://github.com/user-attachments/assets/eca92b5d-5868-4f2e-ba13-717a0060c88d" width="50%"/>
-<br/>
-<br/>
-
-- 랭킹 데이터 갱신
-```C#
-public void SaveMyRank()
-{
-    string rowInDate = string.Empty;
-
-    // 랭킹 데이터를 업데이트하려면 게임 데이터에서 사용하는 데이터의 inDate 값 필요
-    BackendReturnObject bro = Backend.GameData.GetMyData("USER_DATA", new Where());
-
-    if (!bro.IsSuccess())
+    if (!isSuccess || string.IsNullOrEmpty(googleId))
     {
-        Debug.LogWarning("뒤끝 서버 랭킹 업데이트를 위한 데이터 조회 중 문제 발생");
+        Debug.LogError("Google Login Failed");
         return;
     }
 
-    Debug.LogWarning("뒤끝 서버 랭킹 업데이트를 위한 데이터 조회 성공!");
+    await LoginServer(googleId);
+}
 
-    if (bro.FlattenRows().Count > 0)
+private async UniTask LoginServer(string accountCode)
+{
+    LoginRequest request = new LoginRequest()
     {
-        rowInDate = bro.FlattenRows()[0]["inDate"].ToString();
-    }
-    else
-    {
-        Debug.LogWarning("뒤끝 서버 랭킹 업데이트를 위한 데이터가 존재하지 않음");
-    }
-
-    Param param = new Param()
-    {
-        {"RankPoint",  DataManager.Instance.GetMyUserData().UserCommonData.RankPoint}
+        AccountCode = accountCode
     };
 
-    // 해당 데이터테이블의 데이터를 갱신하고, 랭킹 데이터 정보 갱신
-    bro = Backend.URank.User.UpdateUserScore(RANK_UUID, "USER_DATA", rowInDate, param);
-
-    if (bro.IsSuccess())
-    {
-        Debug.LogWarning("뒤끝 서버 랭킹 등록 성공!");
-    }
-    else
-    {
-        Debug.LogWarning("뒤끝 서버 랭킹 등록 실패");
-    }
+    await NetworkManager.Instance.SendLogin(request);
 }
 ```
 <br/>
 
-- 뒤끝 서버 Json 데이터를 파싱해서 나의 랭킹 불러오기
+- 서버에서는 `AccountCode`를 기준으로 MongoDB의 유저 데이터를 조회
+
 ```C#
-public RankData GetMyRankData()
+public async Task<UserCommonData> GetUserCommonData(string accountCode)
 {
-    // 내 랭킹 정보 불러오기 
-    BackendReturnObject bro = Backend.URank.User.GetMyRank(RANK_UUID);
-
-    if (bro.IsSuccess())
-    {
-        try
-        {
-            JsonData rankDataJson = bro.FlattenRows();
-
-            // 받아온 데이터의 개수가 0 -> 데이터가 없음
-            if (rankDataJson.Count <= 0)
-            {
-                Debug.LogWarning("뒤끝 서버 나의 랭킹 데이터가 존재하지 않음");
-                return null;
-
-            }
-            else
-            {
-                Debug.LogWarning("뒤끝 서버 나의 랭킹 조회 성공!");
-
-                RankData data = new RankData()
-                {
-                    NickName = rankDataJson[0]["nickname"].ToString(),
-                    Rank = int.Parse(rankDataJson[0]["rank"].ToString()),
-                    RankPoint = int.Parse(rankDataJson[0]["score"].ToString()),
-
-                    // 추가 항목 데이터
-                    Image = rankDataJson[0]["CharacterImg"].ToString()
-                };
-
-                return data;
-            }
-        }
-        // 나의 랭킹 정보 JSON 데이터 파싱에 실패했을 때
-        catch (System.Exception e)
-        {
-            Debug.LogWarning($"뒤끝 서버 나의 랭킹 데이터 파싱 실패 : {e}");
-            return null;
-        }
-    }
-    else
-    {
-        Debug.LogWarning("뒤끝 서버 나의 랭킹 데이터 불러오기 실패");
-        return null;
-    }
+    return await UserCommonCollection
+        .Find(x => x.AccountCode == accountCode)
+        .SingleOrDefaultAsync();
 }
 ```
 <br/>
 
-- 뒤끝 서버 Json 데이터를 파싱해서 유저 랭킹 불러오기
+- 빠른 계정 검색을 위해 `AccountCode`에 Ascending Index 생성
+
 ```C#
-public List<RankData> GetRankDataList()
-{
-    int maxRankList = ClientDef.RankingCount;
+var indexKeysDefinition = Builders<UserCommonData>.IndexKeys
+    .Ascending(x => x.AccountCode);
 
-    // 랭킹 테이블에 있는 유저의 offset ~ offset + limit 순위 랭킹 정보를 불러옴
-    BackendReturnObject bro = Backend.URank.User.GetRankList(RANK_UUID, maxRankList, 0);
-
-    if (bro.IsSuccess())
+var indexModel = new CreateIndexModel<UserCommonData>(
+    indexKeysDefinition,
+    new CreateIndexOptions
     {
-        try
-        {
-            JsonData rankDataJson = bro.FlattenRows();
+        Background = true
+    });
 
-            // 받아온 데이터의 개수가 0 -> 데이터가 없음
-            if (rankDataJson.Count <= 0)
-            {
-                Debug.LogWarning("뒤끝 서버 랭킹 데이터가 존재하지 않음");
-
-                return null;
-            }
-            else
-            {
-                Debug.LogWarning("뒤끝 서버 랭킹 조회 성공!");
-
-                List<RankData> rankData = new List<RankData>();
-                int rankCount = rankDataJson.Count;
-
-                for (int index = 0; index < rankCount; ++index)
-                {
-                    RankData data = new RankData()
-                    {
-                        NickName = rankDataJson[index]["nickname"].ToString(),
-                        Rank = int.Parse(rankDataJson[index]["rank"].ToString()),
-                        RankPoint = int.Parse(rankDataJson[index]["score"].ToString()),
-
-                        // 추가 항목 데이터
-                        Image = rankDataJson[index]["CharacterImg"].ToString()
-                    };
-
-                    rankData.Add(data);
-                }
-
-                return rankData;
-            }
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogWarning($"뒤끝 서버 랭킹 데이터 파싱 실패 : {e}");
-            return null;
-        }
-    }
-    else
-    {
-        Debug.LogWarning("뒤끝 서버 랭킹 데이터 불러오기 실패");
-        return null;
-    }
-}
+await UserCommonCollection.Indexes.CreateOneAsync(indexModel);
 ```
 <br/>
 
-### 6. Google Admob 광고 구현
-<img src="https://github.com/user-attachments/assets/5351db87-58f9-4f79-999d-e2a5df0e39c7" width="50%"/> 
+- Google 로그인 정보와 게임 데이터를 분리함으로써 추후 다른 로그인 방식이 추가되어도 서버의 유저 데이터 구조를 최대한 유지할 수 있도록 구성
+<br/>
+<br/>
+
+
+### 3. AWS 라이브 서버 셋팅
 
 #### 구현 이유
-- 유저들이 광고를 시청함으로써, 게임의 수익화를 실현하기 위해
+- 로컬 PC에서만 동작하던 ASP.NET Core 서버를 실제 Android 빌드에서도 접속할 수 있는 라이브 환경으로 구성하기 위해
+- 개인 프로젝트 규모에서 필요한 성능을 확보하면서 서버 유지 비용을 최소화하기 위해
+- 서버와 MongoDB를 직접 운영하여 HTTP 통신부터 DB 저장, 배포까지 전체 서버 흐름을 경험하기 위해
 
 #### 구현 방법
-- Google Admob에서 보상형 광고 구현
-- SDK 초기화, 광고 로딩, 실패 처리, 보상 지급까지 모든 과정을 AdManager에서 통제
-- 로딩 → 표시 → 보상 지급 → 재로딩 까지 한 사이클을 자동 처리하도록 설계
-```C#
-    private void Init()
-    {
-        if (IsTestMode)
-        {
-            // 테스트용 광고 단위 ID
-#if UNITY_ANDROID
-            m_AdRewardUnitId = "ca-app-pub-3940256099942544/5224354917";
-#elif UNITY_IPHONE
-            m_AdRewardUnitId = "ca-app-pub-3940256099942544/1712485313";
-#else
-            m_AdRewardUnitId = "unused";
-#endif
-        }
-        else
-        {
-            // 실제 배포용 광고 단위 ID (수정 필요)
-#if UNITY_ANDROID
-            m_AdRewardUnitId = "ca-app-pub-5906820670754550/8653741011";
-#elif UNITY_IPHONE
-            m_AdRewardUnitId = "ca-app-pub-3940256099942544/1712485313";
-#else
-            m_AdRewardUnitId = "unused";
-#endif
-        }
+- AWS EC2 인스턴스 생성
+- 인스턴스 타입은 `t4g.small`, 아키텍처는 `ARM64` 선택
+- ASP.NET Core 서버를 Linux ARM64 환경에 맞게 Publish
+- Live 환경용 `appsettings`를 분리하여 MongoDB 접속 정보를 관리
+- 서버 실행 후 Android 클라이언트의 Live 서버 주소를 AWS 서버 주소로 연결
 
-        // Google Mobile Ads SDK 초기화
-        MobileAds.Initialize((InitializationStatus initStatus) => { });
-    }
-
-// 리워드 광고 로드 및 표시
-public void LoadRewardedAd(Action action)
+```JSON
 {
-    if (m_IsLoadingReward) return;
-    m_IsLoadingReward = true;
-
-    m_Action = action;
-
-    // 이전 광고 객체가 남아 있다면 정리
-    if (m_RewardedAd != null)
-    {
-        m_RewardedAd.Destroy();
-        m_RewardedAd = null;
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
     }
+  },
 
-    // 광고 요청 생성
-    var adRequest = new AdRequest();
-
-    // 광고 요청 전송
-    RewardedAd.Load(m_AdRewardUnitId, adRequest,
-        (RewardedAd ad, LoadAdError error) =>
-        {
-            m_IsLoadingReward = false;
-
-            // 빌드에서 오류가 나기 때문에, 메인 스레드에서 실행해야 한다!
-            UniTask.Post(() =>
-            {
-                // 에러 처리
-                if (error != null || ad == null)
-                {
-                    Debug.LogError("Rewarded ad failed to load an ad " +
-                                   "with error : " + error);
-
-                    //광고 불러오기 실패
-                    UIManager.Instance.OpenSystemPopup(new MessageData
-                    {
-                        Type = PopupType.OkOnly,
-                        Title = "알림",
-                        Message = "광고 불러오기를 실패 했습니다."
-                    });
-
-                    return;
-                }
-
-                Debug.LogWarning("Rewarded ad loaded with response : "
-                      + ad.GetResponseInfo());
-
-                m_RewardedAd = ad;
-                RegisterEventHandlers(m_RewardedAd);
-                ShowRewardedAd();
-            });
-        });
+  "MongoDB": "mongodb://127.0.0.1:27017"
 }
+```
+<br/>
 
-// 리워드 광고 표시
-private void ShowRewardedAd()
+- .NET 서버를 ARM64 Linux 환경으로 Publish
+
+```bash
+dotnet publish -c Release -r linux-arm64 --self-contained false
+```
+<br/>
+
+- 서버 실행 환경에 따라 Test / Live 설정 파일을 분리
+
+```C#
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: false)
+    .AddJsonFile(
+        $"appsettings.{builder.Environment.EnvironmentName}.json",
+        optional: true
+    );
+```
+<br/>
+
+- AWS 보안 그룹에서 실제 서버 통신에 필요한 포트만 허용하여 외부 접근 범위를 제한
+- 서버 재실행 이후에도 동일한 Live 설정을 사용할 수 있도록 Production 환경을 기준으로 배포 구조 구성
+<br/>
+<br/>
+
+
+### 4. 블록 타입 구현 (AI 활용)
+
+#### 구현 이유
+- 단순히 숫자가 내려오는 방식만 반복하면 플레이가 빠르게 단조로워질 수 있기 때문에 블록별 특성을 추가
+- 하나의 Block 클래스를 기반으로 여러 특성을 조합할 수 있도록 설계하여 새로운 패턴을 쉽게 확장하기 위해
+- 이번 프로젝트의 개발 목표 중 하나인 AI 활용 경험을 위해 블록 타입 아이디어 및 구현 과정에 AI를 적극 활용
+
+#### 구현 방법
+- 블록 특성을 `[System.Flags]` enum으로 정의
+- 하나의 블록이 `Rotation + Move`, `Armor + Move`처럼 여러 타입을 동시에 가질 수 있도록 비트 플래그 방식 사용
+
+```C#
+[System.Flags]
+public enum BlockType
 {
-    if (m_RewardedAd != null && m_RewardedAd.CanShowAd())
+    None     = 0,
+    Rotation = 1 << 0,
+    Move     = 1 << 1,
+    Armor    = 1 << 2,
+    Ghost    = 1 << 3,
+}
+```
+<br/>
+
+- 비트 연산을 이용하여 블록이 특정 타입을 가지고 있는지 확인
+
+```C#
+public bool HasType(BlockType type)
+{
+    return (m_BlockType & type) != 0;
+}
+```
+<br/>
+
+- 기본 Block 로직은 공통으로 유지하고 타입별 동작만 분리
+
+```C#
+private void Update()
+{
+    transform.position += Vector3.down * m_MoveSpeed * Time.deltaTime;
+
+    if (HasType(BlockType.Rotation))
+        UpdateRotation();
+
+    if (HasType(BlockType.Move))
+        UpdateMove();
+
+    if (HasType(BlockType.Ghost))
+        UpdateGhost();
+
+    if (transform.position.y <= -3.5f)
+        Destroy(gameObject);
+}
+```
+<br/>
+
+- Armor 타입은 기본 블록보다 높은 HP를 가지도록 구성
+
+```C#
+private void SetBlockType()
+{
+    m_Hp = 1;
+
+    if (HasType(BlockType.Armor))
+        m_Hp += 1;
+}
+```
+<br/>
+
+- 정답 계산 결과와 동일한 숫자를 가진 블록을 찾아 Damage 처리
+
+```C#
+private void CheckBlockResult(int blockNumber)
+{
+    Block[] blocks = FindObjectsByType<Block>(FindObjectsSortMode.None);
+
+    foreach (Block block in blocks)
     {
-        m_RewardedAd.Show((Reward reward) =>
+        if (block.Number != blockNumber)
+            continue;
+
+        block.Damage();
+        AddScore(100);
+        SetFormula();
+        return;
+    }
+}
+```
+<br/>
+
+- AI를 단순 코드 생성 용도로만 사용하지 않고 `Flags` 기반 구조, 타입 조합 방법, 예외 상황 등을 질문한 뒤 실제 프로젝트 구조에 맞게 수정하여 적용
+- 생성된 코드를 그대로 사용하는 대신 동작 원리를 확인하고 프로젝트의 기존 코드 스타일에 맞게 재구성
+<br/>
+<br/>
+
+
+### 5. HTTP 통신 방식의 랭킹 구현
+
+#### 구현 이유
+- 이전 프로젝트에서는 뒤끝 서버의 랭킹 기능을 사용했지만, 이번에는 직접 구축한 서버와 DB만으로 랭킹 시스템을 구현하기 위해
+- 별도의 랭킹 SDK 의존성 없이 게임 데이터와 동일한 서버 구조에서 관리하기 위해
+- 점수 저장 및 랭킹 조회는 프레임 단위 실시간성이 필요하지 않기 때문에 HTTP 통신으로 충분하다고 판단
+
+#### 구현 방법
+- 게임 종료 후 최고 점수 갱신이 필요한 경우 서버에 점수 저장 요청
+- 서버는 클라이언트가 전달한 계정을 기준으로 유저 데이터를 조회하고 점수를 저장
+- 랭킹 화면 진입 시 클라이언트에서 랭킹 조회 HTTP 요청
+- 서버에서는 MongoDB의 Score를 기준으로 내림차순 정렬하여 상위 유저 목록 반환
+
+```C#
+public async Task<List<UserGameData>> GetRanking(int count)
+{
+    return await UserGameCollection
+        .Find(Builders<UserGameData>.Filter.Empty)
+        .SortByDescending(x => x.Score)
+        .Limit(count)
+        .ToListAsync();
+}
+```
+<br/>
+
+- 서버에서 받은 유저 데이터를 랭킹 데이터 형태로 가공
+
+```C#
+public class RankingData
+{
+    public int Rank;
+    public string NickName;
+    public int Score;
+    public string ImageNum;
+}
+```
+<br/>
+
+```C#
+public async Task<List<RankingData>> MakeRankingData(int count)
+{
+    List<UserGameData> users = await GetRanking(count);
+    List<RankingData> result = new List<RankingData>();
+
+    for (int i = 0; i < users.Count; ++i)
+    {
+        UserCommonData common = await GetUserCommonData(users[i].AccountCode);
+
+        result.Add(new RankingData
         {
-            Debug.Log($"User earned reward: {reward.Amount} {reward.Type}");
-
-            UniTask.Post(() =>
-            {
-                try
-                {
-                    // 보상 처리 로직
-                    m_Action?.Invoke();
-                    m_Action = null;
-
-                    // 완료
-                    UIManager.Instance.OpenSystemPopup(new MessageData
-                    {
-                        Type = PopupType.OkOnly,
-                        Title = "알림",
-                        Message = "광고 골드를 획득 했습니다."
-                    });
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError($"[AdManager] Exception during reward handling: {e}");
-                }
-            });
+            Rank = i + 1,
+            NickName = common.NickName,
+            Score = users[i].Score,
+            ImageNum = common.ImageNum
         });
     }
-    else
-    {
-        Debug.LogWarning("Rewarded ad is not ready yet.");
-        LoadRewardedAd(m_Action);
-    }
-}
 
-// 리워드 광고 이벤트 등록
-private void RegisterEventHandlers(RewardedAd ad)
-{
-    ad.OnAdPaid += (AdValue adValue) =>
-    {
-        Debug.LogWarning(String.Format("Rewarded ad paid {0} {1}.",
-            adValue.Value,
-            adValue.CurrencyCode));
-    };
-    ad.OnAdImpressionRecorded += () =>
-    {
-        Debug.LogWarning("Rewarded ad recorded an impression.");
-    };
-    ad.OnAdClicked += () =>
-    {
-        Debug.LogWarning("Rewarded ad was clicked.");
-    };
-    ad.OnAdFullScreenContentOpened += () =>
-    {
-        Debug.LogWarning("Rewarded ad full screen content opened.");
-    };
-    ad.OnAdFullScreenContentClosed += () =>
-    {
-        Debug.LogWarning("Rewarded ad full screen content closed.");
-    };
-    ad.OnAdFullScreenContentFailed += (AdError error) =>
-    {
-        Debug.LogError("Rewarded ad failed to open full screen content " +
-                       "with error : " + error);
-        LoadRewardedAd(m_Action);
-    };
+    return result;
 }
 ```
 <br/>
 
-### 7. Mobile Notifications를 사용한 로컬 푸시 기능
-<img src="https://github.com/user-attachments/assets/3f398d92-d012-4917-9791-0496ea45824e" width="50%"/>
+- 클라이언트는 서버에서 받은 순위 데이터를 기반으로 랭킹 슬롯 생성
 
-#### 구현 이유
-- 게임의 재접속 유도 및 플레이 지속률(리텐션)을 높이기 위해
-- 서버 없이도 알림 기능 구현
-
-#### 구현 방법
-- 앱 시작 시 Notification 환경 초기화
 ```C#
-private void RegisterAndroidChannel()
+private void SetRanking(List<RankingData> rankingData)
 {
-    var channel = new AndroidNotificationChannel()
+    for (int i = 0; i < rankingData.Count; ++i)
     {
-        Id = "my_channel_id",
-        Name = "Real Fighter",
-        Importance = Importance.High,
-        Description = "Generic notifications",
-    };
-    AndroidNotificationCenter.RegisterNotificationChannel(channel);
+        GameObject obj = Instantiate(m_RankingSlot, Trans_Content);
+        Slot_Ranking slot = obj.GetComponent<Slot_Ranking>();
 
-    Debug.LogWarning("Register Android Channel");
-}
-```
-<br/>
-
-- 로컬 푸시의 종류 정의
-```C#
-public enum LocalPushType
-{
-    None,
-
-    Test,
-    FreeGold,
-
-    Max
-}
-```
-<br/>
-
-- 로컬 푸시 예약 기능 구현
-```C#
-public void SchedulePushNotification(LocalPushType pushType, string title, string message, DateTime scheduleTime)
-{
-    // 예약 시간이 현재보다 미래인지 확인
-    if (scheduleTime <= Util.DateTimeNow)
-    {
-        Debug.LogWarning("The time is earlier or equal to the current time. Please enter a valid future time.");
-        return;
-    }
-
-    try
-    {
-        // Android: 알림 객체 생성 및 설정
-        var notification = new AndroidNotification();
-        notification.Title = title;
-        notification.Text = message;
-        notification.FireTime = scheduleTime;
-        notification.LargeIcon = "icon_0";
-        notification.SmallIcon = "icon_1";
-        notification.ShowInForeground = true;
-        string channelId = "my_channel_id";
-
-        int pushCode = AndroidNotificationCenter.SendNotification(notification, channelId);
-        switch (pushType)
-        {
-            case LocalPushType.FreeGold:
-                PlayerPrefs.SetInt(ClientDef.LOCALKEY_Push_FreeGold, pushCode);
-                break;
-
-            default:
-                break;
-        }
-    }
-    catch (Exception e)
-    {
-        Debug.LogWarning("푸시알람 예약 중 오류 발생: " + e.ToString());
+        slot.SetSlot(rankingData[i]);
     }
 }
 ```
 <br/>
 
-- 로컬 푸시 취소 기능 구현
-```C#
-public void CancelPushNotification(LocalPushType pushType)
-{
-    int pushCode = 0;
-    switch (pushType)
-    {
-        case LocalPushType.FreeGold:
-            pushCode = PlayerPrefs.GetInt(ClientDef.LOCALKEY_Push_FreeGold, 0);
-            break;
-
-        default:
-            break;
-    }
-
-    if (pushCode == 0)
-        return;
-
-    AndroidNotificationCenter.CancelScheduledNotification(pushCode);
-
-    Debug.LogWarning("Complete Cancel to Push Notification.");
-}
-```
+- 랭킹 데이터 또한 일반 유저 데이터와 동일한 HTTP Packet 구조를 사용하도록 하여 별도의 네트워크 시스템을 추가하지 않고 기존 구조를 재사용
 <br/>
-
-### 8. 튜토리얼 구현
-<img src="https://github.com/user-attachments/assets/462ee72c-3eae-4e0c-8efa-6e53d270ce69" width="50%"/>  
-
-#### 구현 이유
-- 캐주얼 게임 수준의 직관적인 UI 안내 시스템 구현을 위해
-- 사용자가 처음 접하면 이해하기 어려운 규칙들을 설명하기 위해
-- 유저가 쉽게 게임 플레이를 학습할 수 있도록 하기 위해
-- 초반 이탈률을 줄이기 위해
-- 대사 기반 튜토리얼, 클릭 기반 튜토리얼을 공용으로 사용할 수 있도록 설계
-- 보상을 지급하여 게임의 성장 구조를 자연스럽게 맛보게하고, 초기 플레이 동기부여 강화를 위해
-
-#### 구현 방법
-- 튜토리얼 각 단계를 enum으로 정의
-```C#
-public enum TutorialStep
-{
-    None,
-
-    LobbyChat_0,
-    LobbyChat_1,
-    ClickBattle,
-
-    IngameChat_0,
-    IngameChat_1,
-    ClickAttack,
-    ClickReady_0,
-    IngameChat_2,
-    IngameChat_3,
-    IngameChat_4,
-    IngameChat_5,
-    IngameChat_6,
-    IngameChat_7,
-    ClickDeffence,
-    ClickReady_1,
-    IngameChat_8,
-    IngameChat_9,
-    IngameChat_10,
-    IngameChat_11,
-    IngameChat_12,
-    IngameChat_13,
-    IngameChat_14,
-    ClickLobby,
-
-    LobbyChat_2,
-    LobbyChat_3,
-    LobbyChat_4,
-    LobbyChat_5,
-
-    Max
-}
-```
-<br/>
-
-- 각각 튜토리얼 단계에 대한 정보를 class로 정의
-```C#
-public class TutorialData
-{
-    public float TimeScale = -1;
-    public Vector2 MaskSize = new Vector2 (0, 0);
-    public Vector2 MaskPos = new Vector2(0, 0);
-    public Action Action_Mask = null;
-    public string ChatText = string.Empty;
-    public bool IsUp = false;
-    public bool IsDown = false;
-}
-```
-<br/>
-
-- 공용으로 사용할 수 있는 TutorialMask 프리팹 생성
-<img src="https://github.com/user-attachments/assets/6ef6e171-ad95-44d8-99e9-f2c664b77a34" width="50%"/>
-<br/>
-
-- 클릭 했을 때, 실행할 함수들을 TutorialController에 정리
-```C#
-public void OnClick_Ready()
-{
-    m_IngameWindow.OnClick_Ready();
-}
-
-public void OnClick_Deffence()
-{
-    m_IngameWindow.OnClick_MyDefences(0);
-}
-```
-<br/>
-
-- 각각 튜토리얼 스텝을 구현
-```C#
-public async UniTask StartTutorial(TutorialStep step)
-{
-    m_IsClickButton = false;
-
-    switch (step)
-    {
-
-        case TutorialStep.LobbyChat_0:
-
-            // TutorialController 가져올 때 까지 대기
-            await UniTask.WaitUntil(() => UIManager.Instance.GetOpened<LobbyWindow>().GetComponent<TutorialController>() != null);
-            m_TutorialController = UIManager.Instance.GetOpened<LobbyWindow>().GetComponent<TutorialController>();
-
-            TutorialData data_0 = new TutorialData()
-            {
-
-                ChatText = "어서와라. 여긴 네가 실력을 증명해야 하는 결투장이다!",
-                Action_Mask = async () =>
-                {
-                    if (m_IsClickButton)
-                        return;
-
-                    m_IsClickButton = true;
-
-                    await StartTutorial(TutorialStep.LobbyChat_1);
-                }
-            };
-            await SetTutorial(data_0);
-
-            break;
-
-        case TutorialStep.LobbyChat_1:
-
-            TutorialData data_1 = new TutorialData()
-            {
-                ChatText = "긴 말 필요 없이 바로 실전으로 가보자고! BATTLE을 클릭해봐!",
-                Action_Mask = async () =>
-                {
-                    if (m_IsClickButton)
-                        return;
-
-                    m_IsClickButton = true;
-
-                    await StartTutorial(TutorialStep.ClickBattle);
-                }
-            };
-            await SetTutorial(data_1);
-
-            break;
-    }
-}
-```
 <br/>
 
 
 ## 💥 트러블 슈팅
 
-### 1. 서버를 직접 구축하지 않은 이유
-#### 문제 상황
-- 1:1 실시간 PVP를 구현을 위해 플레이어 간 프레임 단위 실시간 동기화 요구
-- 랭킹 시스템을 구현해야 함
-
-#### 해결 방안
-##### HTTP 통신 구현
-- 실제로 서버를 구축하여, 원하는대로 커스텀하여 사용 가능
-- 많은 유저들을 수용할 수 있음
-- 서버 컴퓨터, AWS, DB 등 사용이 필요
-- 1인 개발 규모에서는 부담이 크고 유지보수 난이도 높음
-##### 뒤끝 서버 사용
-- 이미 구현되어 있는 랭킹 시스템을 그대로 사용할 수 있음
-- 유지보수 부담이 거의 없음
-- 빠른 개발, 빠른 출시 가능
-- 그 외, 간단한 유저 데이터 저장 가능
-- 하지만, 일정 사용량 이상은 유료로 전환
-##### 포톤 사용
-- 실시간 동기화 영역을 안정적으로 해결
-- Room 생성/입장, 이벤트 브로드캐스팅 자동화
-- 하지만, 일정 인원 이상을 유저를 수용할 수 없음
-##### Easy Save 에셋 사용
-- 로컬에 AES 암호화된 데이터 저장 가능
-- 서버 부하 없이 저장/로드 가능
-- 데이터 조작과 같은 상황에는 대부분 방어할 수 있지만, 데이터의 삭제는 막을 수 없음
- 
-#### 의견 결정
-##### 직접 서버 구축 없이, 뒤끝 서버 + 포톤 + Easy Save 조합 사용
-- 서버 구축·운영에 드는 리소스를 절약
-- 게임 개발 속도 향상
-- 1:1 PVP이기 때문에 인프라 요구량 낮음
-- 써드파티의 거부감만 없다면, 비교적 쉽게 구현할 수 있음
-- 세 솔루션을 조합함으로써 서버 없이도 서버가 있는 게임처럼 완전한 기능 제공 가능
-<br/>
-
-### 2. OnPhotonSerializeView 동기화
-<img src="https://github.com/user-attachments/assets/51f6349a-f468-4524-a1f6-8ad7160f9853" width="50%"/>
-<br/>
-<br/>
+### 1. 서버 통신 방법 선택
 
 #### 문제 상황
-- OnPhotonSerializeView은 Photon에서 실시간 동기화가 필요한 값(위치, 회전, 이동 상태 등)을 지속적으로 송수신하는 기능
-- 플레이어 정보 같은 정적 데이터까지 전송하는 것은 비효율적
-- 프레임 단위로 반복 호출로 성능 저하 및 지연(Latency) 증가 가능성
-- 상대 유저의 기초 데이터는 초기 1회만 전달하면 충분
+- 이번 프로젝트에서는 로그인, 유저 데이터 저장, 숫자 구매/장착, 랭킹 등의 서버 기능이 필요
+- 이전 프로젝트에서는 Photon, 뒤끝 서버 등 외부 서비스를 사용했기 때문에 직접 서버를 구축하고 통신하는 경험이 부족했음
+- 서버 통신 방식에 따라 구현 난이도와 서버 구조가 크게 달라지기 때문에 프로젝트 성격에 맞는 방식 선택이 필요
 
 #### 해결 방안
-##### RPC 사용
-- 필요한 시점에 필요한 데이터만 직접 호출해서 상대방에게 전송
-- 초기 매칭 후 상대 데이터 전달에 적합
-##### Room / Player Properties 사용
-- Photon의 Key-Value 값을 이용하는 방법
- 
+
+##### HTTP
+- Request / Response 구조가 단순하고 구현 및 디버깅이 쉬움
+- REST 형태의 API로 기능을 명확하게 분리 가능
+- 로그인, 저장, 구매, 랭킹처럼 특정 시점에만 데이터를 주고받는 기능에 적합
+- ASP.NET Core와 Unity 모두 관련 기능을 기본적으로 지원
+- 요청할 때마다 연결/응답 과정이 필요하므로 프레임 단위 실시간 통신에는 적합하지 않음
+
+##### TCP Socket
+- 연결을 유지한 상태로 지속적인 양방향 통신 가능
+- 실시간 게임 서버, 채팅, 전투 동기화 등에 적합
+- Packet 분할/조립, 연결 유지, 재접속, Heartbeat 등 직접 관리해야 할 요소가 많음
+- 현재 프로젝트는 실시간 멀티플레이가 없기 때문에 구조가 과도하게 복잡해질 수 있음
+
+##### WebSocket
+- HTTP Handshake 이후 연결을 유지하며 양방향 통신 가능
+- 실시간 알림, 채팅과 같은 기능에 유리
+- 현재 Number Rush의 서버 기능은 서버가 클라이언트에 지속적으로 Push해야 하는 데이터가 없음
+- 유지 연결의 장점을 활용할 기능이 부족함
+
+##### Photon / BaaS
+- 빠르게 서버 기능을 구현할 수 있고 인프라 관리 부담이 적음
+- 이전 프로젝트에서 사용 경험이 있음
+- 직접 서버를 설계하고 배포하는 경험을 얻는다는 이번 프로젝트의 목표와 맞지 않음
+- 서비스에 종속되는 구조가 될 수 있음
+
 #### 의견 결정
-##### RPC 사용
-- Room / Player Properties 사용 방법은 전투 씬, 이동 전에 적용해야 함
-- 이미 구성해놓은 데이터 로드 구조와 충돌
-- 전투 씬 입장 후, 상대 데이터는 단 1회 전달하면 충분
-- RPC 방식이 가장 간단하고 정확한 시점에 데이터를 보낼 수 있음
+##### HTTP 통신 방식 사용
+- Number Rush는 싱글 플레이 중심이며 프레임 단위 실시간 동기화가 필요하지 않음
+- 로그인, 데이터 저장, 구매, 랭킹 모두 요청 시점에 결과를 받는 구조로 충분
+- 구현 구조가 단순하여 서버 로직 자체에 집중할 수 있음
+- ASP.NET Core 서버 구축부터 Unity 통신, AWS 배포까지 전체 과정을 직접 경험할 수 있음
+- 추후 실시간 기능이 추가된다면 해당 기능만 WebSocket 또는 TCP 방식으로 분리하는 것이 적합하다고 판단
+<br/>
+<br/>
+
+
+### 2. MongoDB를 선택한 이유
+
+#### 문제 상황
+- 서버에서 유저 기본 정보, 게임 데이터, 보유 숫자, 장착 숫자, 점수 등을 영구 저장할 DB 필요
+- 개인 프로젝트이지만 실제 라이브 서버처럼 클라이언트가 아닌 서버에서 데이터를 관리하고 싶었음
+- 데이터 구조가 개발 과정에서 자주 변경될 가능성이 있어 초기 설계 부담이 적은 DB가 필요
+
+#### 해결 방안
+
+##### MySQL / PostgreSQL
+- 관계형 데이터베이스이기 때문에 데이터 관계와 무결성을 명확하게 관리 가능
+- JOIN, Transaction, 복잡한 통계 쿼리에 강함
+- 테이블 Schema를 명확하게 정의해야 하며 데이터 구조 변경 시 Migration 관리가 필요
+- 현재 프로젝트의 유저 데이터는 계정별 Document 단위로 저장하기 쉬운 구조이며 복잡한 관계형 쿼리가 많지 않음
+
+##### SQLite
+- 별도의 DB 서버 없이 가볍게 사용할 수 있음
+- 로컬 게임이나 소규모 도구에서는 간단하게 사용 가능
+- 서버가 여러 인스턴스로 확장되는 환경이나 다수의 동시 접근을 처리하는 라이브 DB 용도로는 현재 목적과 맞지 않음
+
+##### Redis
+- 메모리 기반으로 매우 빠른 읽기/쓰기가 가능
+- Cache, Session, Ranking 등에 유리
+- 이번 프로젝트에서는 유저 데이터를 영구 저장할 메인 DB가 필요
+- 랭킹 하나만을 위해 Redis를 추가하면 개인 프로젝트 규모에서는 관리 대상만 증가한다고 판단
+
+##### MongoDB
+- JSON과 유사한 Document 구조로 C# 객체와 데이터 형태가 직관적으로 대응
+- Schema가 비교적 유연하여 개발 중 필드 추가/변경이 쉬움
+- `AccountCode`를 기준으로 유저 단위 데이터를 조회하는 현재 구조와 잘 맞음
+- MongoDB.Driver를 이용해 C#에서 Lambda 기반으로 간단하게 Query 작성 가능
+
+#### 의견 결정
+##### MongoDB 사용
+- Number Rush의 데이터는 강한 관계형 구조보다 `유저 1명 = 여러 게임 데이터 Document` 형태에 가까움
+- 개발 과정에서 `Gold`, `Score`, `ImageNum`, `EquipNumber` 등 필드가 계속 추가되었기 때문에 유연한 Document DB가 유리
+- C# Model과 MongoDB Document를 유사한 형태로 관리할 수 있어 개발 속도가 빠름
+- 랭킹은 `Score` 정렬, 로그인은 `AccountCode` Index 조회만으로 구현 가능하여 현재 규모에서는 충분한 성능을 확보할 수 있다고 판단
+<br/>
+
 ```C#
-[PunRPC]
-public void RPCSetMyData(string nick, int score, string image, string heroName,
-                      int skill0, int skill1, int skill2, int level, int exp, int grade, int gradeExp)
+public class UserNumberData
 {
-    MyNickName = nick;
-    MyScore = score;
-    MyImage = image;
-    MyHeroName = heroName;
-    MyHeroSkillproficiencies[0] = skill0;
-    MyHeroSkillproficiencies[1] = skill1;
-    MyHeroSkillproficiencies[2] = skill2;
-    MyHeroLevel = level;
-    MyHeroExp = exp;
-    MyHeroGrade = grade;
-    MyHeroGradeExp = gradeExp;
+    public string AccountCode { get; set; }
+    public List<int> EquipNumber { get; set; } = new List<int>();
+    public List<int> InventoryNumber { get; set; } = new List<int>();
 }
 ```
 <br/>
 
-### 3. BattleModule의 상속 구조
-<img src="https://github.com/user-attachments/assets/235adc0a-b97e-48d6-919a-af0580af8a6b" width="50%"/>
-<br/>
-<br/>
-
-#### 문제 상황
-- 성격이 비슷한 스크립트의 공통 코드가 모든 스크립트에 중복
-- 한 로직을 수정할 때 모든 전투 컨텐츠마다 수정을 반복해야 했음
-- 신규 전투 컨텐츠를 추가할 때 진입 장벽이 높고, 수정 시 오류가 잦음
-
-#### 해결 방안
-##### 전투 컨텐츠 간 공통 로직을 BattleModule에 통합
-- Initialize, StartGame, EndGame 등 전투 컨텐츠는 흐름이 동일하기 때문에 반복되는 코드를 BattleModule
-- 모든 전투 컨텐츠가 공유하도록 설계
-##### 컨텐츠마다 다르게 동작해야 하는 구간은 virtual 메서드로 분리
-- 컨텐츠별로 동작을 변경해야 하면 override로 오버라이딩할 수 있도록 설계
-##### 모든 컨텐츠에서 동일하게 사용하는 기능은 public 메서드로 제공
-- 일시정지, 모듈 타입 체크, SetRootObject 등 완전히 동일한 기능은 BattleModule에 정의
-
-#### 설계 구조
-##### 부모 클래스: BattleModule
-- 공통 전투 로직 제공
-- virtual 메서드로 확장 포인트 열어둠
-- 싱글톤 + 모듈 생성/삭제 기능 포함
-##### 자식 클래스: PVPModule / ChapterModule 등 
-- 필요한 부분만 override
-- 나머지는 BattleModule의 공통 구현 재사용
-<br/>
-
-### 4. RenderTexture 최적화 적용
-<img src="https://github.com/user-attachments/assets/f07042c2-256d-4ef7-9f07-8a46ed06dce0" width="50%"/>
-<br/>
-<br/>
-
-#### 문제 상황
-- 프리팹 갯수만큼 RenderTexture과 전용 카메라를 생성하게 되면 높은 DrawCall, 높은 메모리 사용
-- 특히 모바일 환경에서는 성능 저하가 심각
-- 예전 프로젝트에서 사용했던 방법이지만, 위 문제를 개선하고 싶었음
-
-#### 해결 방안
-##### 월드 공간에 Hero 프리팹을 실제로 배치하고 UI에 그대로 보여주기
-- 구현이 가장 간단
-- 카메라 1개만 사용 가능
-- 프로젝트의 UI 구조와 충돌로 인해 추가 설정 필요
-##### 하나의 카메라만 사용하고 UV Rect로 화면을 분리하는 방식
-- 카메라는 정적 위치에서 다수의 Hero 프리팹을 한 번에 촬영
-- 각 Hero는 미리 일정한 간격으로 배치
-- UV Rect를 조절하여 RenderTexture의 특정 영역만 잘라서 표시
-- 화면상에서는 마치, 각 Hero를 따로 찍은 것처럼 보임
- 
-#### 의견 결정
-<img src="https://github.com/user-attachments/assets/e9b31750-7089-4fb3-af81-f48a41644507" width="50%"/>
-<br/>
-
-##### UV Rect로 화면을 분리하는 방식 사용
-- Hero 프리팹을 일정 간격으로 배치
-- 카메라 1개를 이동시켜 모든 Hero가 한 화면에 들어오도록 구성
-- UV Rect를 이용해 화면 분할 표시
-
-#### 결과
-##### 성능 개선
-- 카메라 갯수: N개 → 1개 감소
-- RenderTexture: N개 → 1개 감소
-- DrawCall 감소 및 CPU/GPU 부하 저감
-##### 시각 품질 개선
-- 로비 전용 애니메이션 적용
-- 캐릭터마다 다른 포즈 연출 가능
-- 기존 UI 구조를 그대로 유지할 수 있었음
-##### 유지보수성 증가
-- UV Rect 방식은 캐릭터가 추가되어도 UI만 조정하면 되므로 구조가 단순
-- 여러 개의 카메라 세팅 및 관리 과정이 필요 없어졌음
-<br/>
-
-### 5. 현재 시간 구하기
-<img src="https://github.com/user-attachments/assets/ec3a9e46-4bd1-47ae-a043-cbf585fa717b" width="50%"/>
-<br/>
-<br/>
-
-#### 문제 상황
-- 하루 1회 보상 구현을 위해서는 정확한 현재 시간을 구해야 함
-- 클라이언트에서 신뢰할 수 있는 시간을 구해야 함
-
-#### 해결 방안
-##### DateTime.Now
-- 가장 간단하고 직관적으로 구현 가능
-- 유저가 시간을 조작할 수 있음
-##### DateTime.UtcNow.AddHours(9)
-- UtcNow는 세계 표준시(UTC)를 기준으로 동작
-- OS 기기 시간이 바뀌어도 UTC는 조작하기 어려움
-- 한국(KST) 시간으로 맞추기 위해 +9시간 보정
-  
-#### 의견 결정
-##### DateTime.UtcNow.AddHours(9) 사용
-- 세계 표준시 기반이므로 조작 난이도 증가
-- 전 세계가 동일하게 사용하는 시간 기준
-- 클라이언트 단독 환경에서 구현할 수 있는 가장 안전한 방식
-- 서버를 따로 사용하지 않는 구조이기 때문에 최선의 방법
-- 더욱 신뢰 가능한 시간을 구하기 위해서는 서버가 필요
-<br/>
-
-### 6. aab 파일의 용량 줄이는 방법
-<img src="https://github.com/user-attachments/assets/3e582859-ff77-45a0-8893-3fb8e8e317f4" width="50%"/>
-<br/>
-<br/>
-
-#### 문제 상황
-- 구글 플레이 업로드 aab 파일은 최대 200MB까지만 업로드 가능
-
-#### 원인 분석 및 해결
-<img src="https://github.com/user-attachments/assets/b7b98e9a-7d09-47fc-a630-48973cf34ca0" width="50%"/>
-<br/>
-
-##### Resources 폴더에 포함된 불필요한 파일
-- Resources 폴더 안의 파일들은 전부 빌드 용량에 포함
-- 사용하지 않는 파일들은 Resources에 절대 넣어선 안됨
-- 사용하지 않는 Prefab, Texture 등 완전 제거
-- 548MB → 414MB (약 134MB 감소)
-##### 3D 캐릭터 모델 텍스처
-- 빌드 리포트 분석 결과, 3D 캐릭터 텍스처가 전체 용량 대부분을 차지
-- 빌드 시, ASTC 12x12 block으로 강한 압축 적용
-- 이미지 품질 일부 저하를 감수하고 용량 최적화 우선 적용
-- 414MB → 193MB (약 221MB 감소)
-##### WAV 오디오 파일 압축
-- 고용량 WAV BGM 3개를 사용
-- Quality를 100 → 50으로 조정
-- Load Type을 Streaming으로 변경하여 메모리 적재 방식 변경
-- 193MB → 177MB (약 16MB 감소)
-#### 프로젝트의 규모가 커진다면?
-- 위 방법들로는 200MB의 aab 파일을 빌드할 수 없음
-- 추후, 에셋 번들 시스템에 대한 정리와 구현이 필수
-<br/>
-
-### 7. 구글 플레이의 손상된 기능 정책
-<img src="https://github.com/user-attachments/assets/b80e6f2a-d94d-4a58-9d03-0a1b827f805d" width="50%"/>
-<br/>
-<br/>
-
-#### 문제 상황
-- 구글 플레이에 앱을 업로드하는 과정에서 위 메시지와 함께 총 4회 거부를 받음
-- 에디터, 모바일 기기, 블루스택 등 모든 테스트 환경에서 정상 작동함에도 거부를 받음
-
-#### 원인 분석
-##### 튜토리얼 진행 불가
-- 심사는 AI 자동화 또는 해외 심사자로 이루어질 가능성이 높음
-- 직관적이지 않은 튜토리얼은 심사자가 진행하지 못할 수 있음
-##### 연속 클릭 시, 오류 가능성
-- 같은 이유로 내가 원하는대로 단 한번만 클릭을 한다는 보장이 없음
-- 연속 클릭 시, 오류 가능성이 있음
-##### 동작하지 않는 버튼
-- 추후, 업데이트 예정인 버튼에 버튼을 연결하지 않음
-- 심사 시, 버튼이 동작하지 않는 것으로 판단 가능성 있음
-
-#### 문제 해결을 위한 개선 작업
-##### 닉네임 입력 강제 → 비강제 방식으로 변경
-<img src="https://github.com/user-attachments/assets/9f534a66-9ee1-4c96-9fcb-536161194d87" width="50%"/>
-<br/>
-
-- 기존 닉네임을 입력하지 않으면 다음 튜토리얼로 넘어갈 수 없었음
-- 자동 닉네임이 설정되도록 변경
-
-##### 튜토리얼 진행 방식 변경 (특정 UI 클릭 → 화면 전체 클릭 가능)
-<img src="https://github.com/user-attachments/assets/5e893e4b-1634-45bc-bb3a-4c13d2cf6169" width="50%"/>
-<br/>
-
-- 내가 원하는 UI를 클릭하지 않을 수도 있음
-- 특정 UI를 클릭해야만 다음 튜토리얼로 넘어가는 방식에서 화면 전체 아무곳을 클릭해도 넘어가도록 변경
-
-##### 중복 클릭 방지를 위한 Trigger 추가
-- 여러 번 클릭하면 튜토리얼 로직이 중복 실행
-- 다음 단계가 2~3번씩 실행되는 문제가 있는 것을 발견
-- 연속 클릭에도 튜토리얼이 오작동하지 않도록 안정성 향상
 ```C#
-if (m_IsClickButton)
-    return;
+var filter = Builders<UserNumberData>.Filter
+    .Eq(x => x.AccountCode, accountCode);
 
-m_IsClickButton = true;
-await StartTutorial(TutorialStep.LobbyChat_1);
+UserNumberData data = await UserNumberCollection
+    .Find(filter)
+    .SingleOrDefaultAsync();
 ```
 <br/>
-
-##### 비활성 기능 버튼에 안내 팝업 추가
-<img src="https://github.com/user-attachments/assets/56f6d741-8642-4249-885c-8cecc1449c55" width="50%"/>
 <br/>
 
-- 동작하지 않는 버튼이 존재하면 앱 품질 저하로 거부될 수 있음
-- 실제 앱에는 업데이트 예정 기능이 다수 포함
-- “업데이트 예정입니다.” 팝업이 노출 되도록 추가
-- 모든 버튼이 사용자에게 반응을 주도록 조치
+
+### 3. AWS EC2 인스턴스 선택
+
+#### 문제 상황
+- 로컬에서 개발한 ASP.NET Core + MongoDB 서버를 실제 Android 클라이언트가 접속할 수 있는 환경으로 배포해야 함
+- 개인 포트폴리오 프로젝트이기 때문에 높은 서버 비용은 부담
+- 반대로 너무 낮은 사양을 선택하면 .NET 서버와 DB를 함께 실행할 때 메모리 부족이나 성능 저하 가능성이 있음
+
+#### 해결 방안
+
+##### t3.micro / t4g.micro
+- 비용이 저렴하고 작은 테스트 서버에 적합
+- 메모리가 작아 ASP.NET Core와 MongoDB를 함께 운영할 경우 여유 메모리가 부족할 가능성이 있음
+- 단순 테스트에는 충분하지만 라이브 환경을 구성하는 목적에서는 여유가 적다고 판단
+
+##### t3.small
+- 2 vCPU / 2 GiB 메모리로 개인 프로젝트 서버에 충분한 수준
+- x86_64 아키텍처이기 때문에 호환성이 높음
+- 동일한 목적에서 ARM 기반 Graviton 인스턴스보다 비용 효율이 떨어질 수 있음
+
+##### t4g.small
+- 2 vCPU / 2 GiB 메모리
+- AWS Graviton 기반 ARM64 인스턴스
+- ASP.NET Core가 Linux ARM64를 지원하기 때문에 현재 서버 실행에 문제 없음
+- 개인 프로젝트에서 필요한 성능을 확보하면서 비용 효율을 높일 수 있음
+
+#### 의견 결정
+##### `t4g.small / ARM64` 선택
+- 서버와 MongoDB를 함께 실행하기 위해 micro보다 메모리 여유가 있는 small 선택
+- 실시간 대규모 전투 서버가 아니기 때문에 2 vCPU / 2 GiB 수준이면 현재 트래픽에 충분하다고 판단
+- .NET이 ARM64 Publish를 지원하므로 x86 인스턴스를 고집할 이유가 적음
+- Graviton 기반 인스턴스를 사용하여 비용 대비 성능을 확보
+- 실제 라이브 환경을 ARM64로 구성하면서 빌드 타깃과 서버 아키텍처 차이도 직접 경험
+<br/>
+
+```bash
+dotnet publish -c Release -r linux-arm64 --self-contained false
+```
 <br/>
 <br/>
+
+
+### 4. Google 로그인 SDK 선택
+
+#### 문제 상황
+- Google 계정을 이용해 유저를 식별하고 서버의 `AccountCode`로 사용할 고유 ID가 필요
+- Google 로그인 구현 방법으로 GPGS, Firebase Authentication, Universal SDK를 비교
+- 현재 프로젝트는 Google 로그인만 우선 구현하면 되며, 로그인 시스템을 지나치게 복잡하게 만들 필요는 없었음
+
+#### 해결 방안
+
+##### Google Play Games Services (GPGS)
+- Google Play Games와 직접 연동할 수 있음
+- 로그인 외에도 업적, 리더보드, Saved Games 등 Google Play Games 기능을 사용할 수 있음
+- Google Cloud / Play Console 설정과 OAuth Client 설정 등 초기 구성이 필요
+- 현재 프로젝트는 GPGS의 게임 기능보다 Google 계정 식별만 필요
+
+##### Firebase Authentication
+- Google뿐 아니라 Apple, Email, 익명 로그인 등 다양한 인증 방식을 통합 관리하기 좋음
+- Firebase의 다른 서비스와 연결하기 쉬움
+- 게스트 계정 연동, 여러 Provider 통합 같은 확장에는 유리
+- 현재 프로젝트는 Google 로그인 하나만 필요하기 때문에 Firebase 인증 구조 전체를 추가하는 것은 기능 대비 복잡도가 증가
+- 게임 데이터는 이미 직접 구축한 ASP.NET Core + MongoDB 서버에서 관리하므로 Firebase DB 기능도 필요하지 않음
+
+##### Universal SDK
+- 현재 필요한 Google 로그인 기능을 비교적 간단하게 구현 가능
+- SDK에서 로그인 후 전달받은 Google 고유 ID를 자체 서버의 `AccountCode`로 연결 가능
+- 기존 서버/DB 구조를 변경하지 않고 인증 단계만 추가할 수 있음
+- 추후 필요하다면 Firebase를 추가하여 게스트 계정 연동이나 다른 Provider 로그인 구조로 확장 가능
+
+#### 의견 결정
+##### Universal SDK 사용
+- 현재 목표는 Google 로그인 성공 후 고유 ID를 획득하여 자체 서버 계정과 연결하는 것
+- 게임 데이터와 계정 데이터의 실질적인 관리는 자체 서버에서 담당하므로 Firebase 의존성이 필수적이지 않음
+- GPGS의 업적/리더보드 기능도 현재 프로젝트에서 사용하지 않음
+- 필요한 기능만 빠르게 구현하면서 기존 HTTP 서버 구조를 유지할 수 있는 Universal SDK가 가장 적합하다고 판단
+- 먼저 Universal SDK 기반으로 구현하고, 추후 게스트 계정 연동이나 다중 로그인 Provider가 필요해질 경우 Firebase를 추가할 수 있도록 구조를 분리
+<br/>
+<br/>
+
 
 ## 📋 프로젝트 회고
-이번 프로젝트의 가장 큰 목표는 실무 경험을 바탕으로 실무 코드 스타일을 적용한 구조적이고 일관된 코드 작성이었습니다. 그래서 서버를 사용하지 않는 멀티 플레이 게임이라는 점은 이전 프로젝트와 비슷하지만, 지난번에는 구현에 초점을 맞췄다면, 이번에는 유지보수성이 좋은 코드 작성에 초점을 맞췄습니다. 이 부분에서는 원하는대로 잘 수행한 것 같았습니다. 그래서 지난 1년간의 실무 경험으로 많이 성장했다고 느꼈습니다. 목표한 부분은 프로젝트에 잘 나타냈다고 생각하지만, 새로운 기술을 사용한 부분이 많이 없어서 아쉬웠습니다. 그래서 다음 프로젝트에서는 이때까지는 사용하지 않았던 기술에 대해서 많이 도전을 할 예정입니다. 특히, 그 중에서 HTTP 서버 통신과 에셋번들은 꼭 프로젝트에 적용시켜 잘 정리해 볼 예정입니다.
-  
+이번 프로젝트의 가장 큰 목표는 이전 프로젝트에서 사용하지 않았던 **HTTP 서버 통신과 직접적인 라이브 서버 구축 경험**을 얻는 것이었습니다. 이전에는 Photon이나 뒤끝 서버와 같은 외부 서비스를 활용하여 기능 구현에 집중했다면, Number Rush에서는 Unity 클라이언트부터 ASP.NET Core 서버, MongoDB, AWS 배포까지 하나의 흐름을 직접 구성했습니다.
+
+특히 클라이언트가 요청한 값을 그대로 저장하는 것이 아니라 서버에서 데이터를 다시 조회하고 검증한 뒤 결과를 반환하는 구조를 구현하면서, 단순히 "통신이 되는 코드"와 실제 서비스에서 사용할 수 있는 서버 구조의 차이를 경험할 수 있었습니다. 또한 MongoDB의 Index, AWS EC2 인스턴스와 CPU 아키텍처, Test / Live 환경 분리처럼 게임 로직 외에도 서버 운영에 필요한 요소들을 직접 다뤄볼 수 있었습니다.
+
+Google 로그인 역시 단순히 SDK를 적용하는 것보다 GPGS, Firebase, Universal SDK의 역할을 비교하고 현재 프로젝트에 필요한 범위를 기준으로 Universal SDK를 선택했습니다. 이를 통해 기술을 많이 사용하는 것보다 프로젝트의 요구사항에 맞는 기술을 선택하는 과정이 중요하다는 점을 다시 확인했습니다.
+
+또한 블록 타입 구현 과정에서는 AI를 적극 활용했습니다. AI가 제안한 코드를 그대로 적용하는 방식이 아니라, `[Flags]` 구조와 비트 연산의 동작 원리를 확인하고 기존 프로젝트 구조에 맞게 수정하면서 개발 보조 도구로 활용했습니다.
+
+이번 프로젝트를 통해 **Unity 클라이언트 → HTTP 통신 → ASP.NET Core 서버 → MongoDB → AWS 라이브 환경**으로 이어지는 전체 구조를 직접 구축했다는 점이 가장 큰 성과였습니다. 추후에는 HTTPS 적용, 서버 프로세스 자동 관리, 배포 자동화, 캐시 서버 도입 등 실제 서비스 운영에 가까운 인프라 구조까지 확장해보고 싶습니다.
