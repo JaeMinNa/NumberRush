@@ -1,6 +1,6 @@
 # 🖥️ Number Rush
 + 당신의 뇌의 피지컬을 보여주세요!
-+ 끈임없이 다가오는 블록을 사친연산으로 파괴하세요!
++ 끊임없이 다가오는 블록을 사친연산으로 파괴하세요!
 + 숫자들을 수집하세요!
 + 랭킹을 올려보세요!
 <br/>
@@ -21,7 +21,7 @@
 
 ## ⚙️ Environment
 - `Unity 6000.3.13f1`
-- **IDE** : Visual Studio 2026, MonoDevelop
+- **IDE** : Visual Studio 2026
 - **VCS** : Git (GitHub Desktop)
 - **Platform** : Android
 - **Resolution** : 1080 x 1920 `FHD`
@@ -35,11 +35,11 @@
 </p>
 <p align="center">
   <img src="https://github.com/user-attachments/assets/e43d0db6-50b6-40ae-9112-6872adc6f362" width="49%"/>
-  <img src="https://github.com/user-attachments/assets/b8993ae9-b307-49c2-910e-761e6f47782f" width="49%"/>
+  <img src="https://github.com/user-attachments/assets/f8d3c142-dc84-4c4a-b6b9-f1a83ec4f3bb" width="49%"/>
 </p>
 <p align="center">
   <img src="https://github.com/user-attachments/assets/cb0af2da-6a81-47bd-842a-407c4ba263b8" width="49%"/>
-  <img src="https://github.com/user-attachments/assets/f8d3c142-dc84-4c4a-b6b9-f1a83ec4f3bb" width="49%"/>
+  <img src="https://github.com/user-attachments/assets/b8993ae9-b307-49c2-910e-761e6f47782f" width="49%"/>
 </p>
 <br/>
 
