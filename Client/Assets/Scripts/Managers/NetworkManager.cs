@@ -91,8 +91,6 @@ public partial class NetworkManager : Singleton<NetworkManager>
 
         string Url = Util.GetServerUrl(GameManager.Instance.GetServerType());
 
-        //UIManager.Instance.SetTouchBlock(true);
-
         using (UnityWebRequest www = UnityWebRequest.Post(Url, formData))
         {
             yield return www.SendWebRequest();
@@ -118,40 +116,7 @@ public partial class NetworkManager : Singleton<NetworkManager>
                                 receiveAction?.Invoke();
                             }
                             break;
-                        //case PacketType.GetGameData:
-                        //    {
-                        //        List<string> TableData = Util.ToObjectJson<List<string>>(RecvPacket.Data);
-                        //        DataManager.Load(TableData);
-                        //        ReceiveAction?.Invoke();
-                        //    }
-                        //    break;
-                        //case PacketType.GetServerTime:
-                        //    {
-                        //        GameManager.Instance.SetServerTime(RecvPacket.Data);
-                        //        ReceiveAction?.Invoke();
-                        //    }
-                        //    break;
-
-                        //case PacketType.CheckBanState:
-                        //    {
-                        //        ReceiveAction?.Invoke();
-                        //    }
-                        //    break;
-
-                        //// 최초 접속 시 UID 생성
-                        //case PacketType.CheckUID:
-                        //    {
-                        //        GameManager.Instance.UID = RecvPacket.Data;
-                        //        ReceiveAction?.Invoke();
-                        //    }
-                        //    break;
-
-                        //// 플랫폼 로그인으로 UID와 계정 정보를 가져오기
-                        //case PacketType.GetUIDbyPlatform:
-                        //    {
-                        //        GameManager.Instance.UID = RecvPacket.Data;
-                        //    }
-                        //    break;
+                        
                         case PacketType.ContentsPacket:
                             {
                                 yield return PacketSystem.ProcessPacket(RecvPacket.Data, receiveAction);
@@ -161,7 +126,6 @@ public partial class NetworkManager : Singleton<NetworkManager>
                 }
                 else
                 {
-                    //UIManager.Instance.SetTouchBlock(false);
                     OnServerError(www.downloadHandler.text);
                 }
             }
@@ -185,7 +149,6 @@ public partial class NetworkManager : Singleton<NetworkManager>
         }
 
         IsProcess = false;
-        //UIManager.Instance.SetTouchBlock(false);
     }
 
     // 서버와 통신이 성공했을 경우 에러
