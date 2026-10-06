@@ -19,6 +19,8 @@
  - HTTP 서버 통신 구현
  - 구글 로그인 구현
  - AWS 라이브 서버 셋팅
+ - 파이어 베이스 적용
+ - 번들 패치 구현
  - AI 적극 활용
 <br/>
 
@@ -30,19 +32,19 @@
 - **Resolution** : 1080 x 1920 `FHD`
 <br/>
 
-## ▶️ 게임 스크린샷
+## ▶️ 게임 스크린샷   ****
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/b6b0eef1-77d3-4b0a-82e5-209b516450b3" width="30%"/>
+  <img src="https://github.com/user-attachments/assets/50db07c2-b61b-4be5-925b-7a4f22e628f4" width="30%"/>
+</p>
+<p align="center">
   <img src="https://github.com/user-attachments/assets/c977b0e8-aef5-4ada-a269-22c5fe00ac9b" width="30%"/>
-</p>
-<p align="center">
   <img src="https://github.com/user-attachments/assets/e43d0db6-50b6-40ae-9112-6872adc6f362" width="30%"/>
-  <img src="https://github.com/user-attachments/assets/f8d3c142-dc84-4c4a-b6b9-f1a83ec4f3bb" width="30%"/>
 </p>
 <p align="center">
+  <img src="https://github.com/user-attachments/assets/f8d3c142-dc84-4c4a-b6b9-f1a83ec4f3bb" width="30%"/>
   <img src="https://github.com/user-attachments/assets/cb0af2da-6a81-47bd-842a-407c4ba263b8" width="30%"/>
-  <img src="https://github.com/user-attachments/assets/b8993ae9-b307-49c2-910e-761e6f47782f" width="30%"/>
 </p>
 <br/>
 
