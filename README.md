@@ -301,6 +301,8 @@ case UserNumberContents.BuyOneNumber_Random:
 
 
 ### 2. 번들 패치 구현
+<img src="https://github.com/user-attachments/assets/50db07c2-b61b-4be5-925b-7a4f22e628f4" width="30%"/>
+<br/>
 
 #### 구현 이유
 - 게임 업데이트가 발생할 때마다 전체 APK/AAB를 다시 배포하지 않고 변경된 리소스만 업데이트할 수 있는 구조를 구현하기 위해
@@ -448,6 +450,8 @@ public class FirebaseManager : Singleton<FirebaseManager>
 
 - Firebase Analytics를 이용하여 게임에서 발생하는 주요 이벤트를 기록
 - 주요 시점에서 이벤트를 전달하여 Firebase Analytics에서 유저 행동 데이터를 확인할 수 있도록 구성
+<img src="https://github.com/user-attachments/assets/4c239287-2e8b-4b06-8d18-a92fffb25b24" width="30%"/>
+<br/>
 
 ```C#
 FirebaseManager.Instance.LogEvent("Game Start");
@@ -467,6 +471,9 @@ public void SetUserProperty(string propertyName, string value)
 <br/>
 
 - Firebase Cloud Messaging을 함께 적용하여 Push 알림을 받을 수 있는 기반을 구성
+<img src="https://github.com/user-attachments/assets/b772a05e-1cee-4dd7-a74d-bbeb524213ca" width="30%"/>
+<br/>
+
 - Firebase를 게임 데이터 저장 용도로 사용하지 않고 Analytics 및 Messaging 역할로 분리
 
 <br/>
@@ -898,6 +905,9 @@ Amazon S3
 <br/>
 
 ##### BuildWindow를 이용한 빌드 과정 자동화
+<img src="https://github.com/user-attachments/assets/9f95c245-ef10-4fd1-b89b-1eb6c96b986c" width="30%"/>
+<br/>
+
 - APK와 AssetBundle을 각각 수동으로 설정하고 빌드하는 과정에서 발생할 수 있는 설정 실수를 줄이기 위해 Unity EditorWindow 기반 `BuildWindow` 제작
 - 하나의 BuildWindow에서 다음 작업을 처리할 수 있도록 구성
 
@@ -1070,6 +1080,10 @@ AssetBundle
 <br/>
 
 #### 실제 APK 용량 감소
+ <img src="https://github.com/user-attachments/assets/1d9f8fd8-9c99-4a04-8f9d-59f2f2b3a202" width="30%"/>
+ <img src="https://github.com/user-attachments/assets/446382f7-c010-4125-86e1-69c9d0c59792" width="30%"/>
+ <br/>
+
 - AssetBundle 적용 전에는 게임 리소스가 APK에 함께 포함되어 `79.6MB`의 파일이 생성
 - 리소스를 AssetBundle로 분리하고 외부 패치 서버에서 다운로드하도록 변경한 이후 APK 크기가 `55.1MB`로 감소
 - 결과적으로 약 `24.5MB`의 APK 용량을 줄였으며 기존 크기 대비 약 `30.8%` 감소
