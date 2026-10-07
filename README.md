@@ -300,7 +300,179 @@ case UserNumberContents.BuyOneNumber_Random:
 <br/>
 
 
-### 2. Google 로그인 구현 (Universal SDK)
+### 2. 번들 패치 구현
+
+#### 구현 이유
+- 게임 업데이트가 발생할 때마다 전체 APK/AAB를 다시 배포하지 않고 변경된 리소스만 업데이트할 수 있는 구조를 구현하기 위해
+- 이미지, Prefab, Audio 등의 리소스를 실행 파일과 분리하여 필요한 리소스를 서버에서 다운로드할 수 있도록 구성하기 위해
+- 실제 라이브 게임에서 사용하는 패치 구조를 직접 구현하며 AssetBundle 생성부터 업로드, 다운로드, 로드까지 전체 흐름을 경험하기 위해
+
+#### 구현 방법
+- 기존 Resources 중심의 리소스 로드 구조에서 AssetBundle을 사용할 수 있도록 ResourceType을 분리
+- Local과 Bundle 모드를 GameConfig에서 선택할 수 있도록 구성
+
+```C#
+public enum ResourceType
+{
+    Local,
+    Bundle,
+}
+
+[CreateAssetMenu]
+public class GameConfig : ScriptableObject
+{
+    [SerializeField] private ServerType m_ServerType;
+    [SerializeField] private ResourceType m_ResourceType;
+    [SerializeField] private int m_PackageBundleCode;
+
+    private string m_ServerAddress = string.Empty;
+    private string m_PatchAddress = string.Empty;
+
+    public void SetConfig(ResourceType resourceType, int bundleCode)
+    {
+        m_ResourceType = resourceType;
+        m_PackageBundleCode = bundleCode;
+    }
+
+    public void SetServerType(ServerType serverType)
+    {
+        m_ServerType = serverType;
+    }
+
+    public void SetPatchAddress(string addr)
+    {
+        m_PatchAddress = addr;
+    }
+}
+```
+<br/>
+
+- Local/Bundle 설정을 코드 전체에서 직접 분기하지 않고 GameConfig를 기준으로 판단하도록 하여 리소스 환경 변경을 한 곳에서 관리
+
+```C#
+GameConfig config = AssetDatabase.LoadAssetAtPath<GameConfig>("Assets/Resources/Data/GameConfig.asset");
+
+config.SetConfig(ResourceType.Bundle, bundleCode);
+config.SetServerType(serverType);
+
+EditorUtility.SetDirty(config);
+AssetDatabase.SaveAssets();
+```
+<br/>
+
+- AssetBundle 파일과 패치 목록을 Amazon S3에 업로드하고 Amazon CloudFront를 CDN으로 사용하여 클라이언트가 패치 파일을 다운로드하도록 구성
+- PatchList.pat 파일을 기준으로 현재 클라이언트가 보유한 리소스와 서버의 리소스를 비교하여 필요한 파일을 판단
+
+```C#
+GameManager.Instance.GameConfig.SetPatchAddress("https://dpy99u25ih8lc.cloudfront.net/Number%20Rush");
+```
+<br/>
+
+- 게임 시작 시 Bundle 환경에서는 바로 로비로 진입하지 않고 PatchManager를 통해 패치 여부를 먼저 확인하도록 구성
+
+```C#
+private void Start()
+{
+#if UNITY_EDITOR
+    if (GameManager.Instance.GetResourceType() == ResourceType.Bundle)
+    {
+        PatchManager.Instance.CheckPatch();
+    }
+    else
+    {
+        StartGame();
+    }
+#else
+    PatchManager.Instance.CheckPatch();
+#endif
+}
+```
+<br/>
+
+- 단순 Slider 진행률뿐 아니라 완료된 파일 수와 전체 파일 수, 현재 다운로드 용량과 전체 다운로드 용량을 함께 표시
+
+```C#
+public void PatchProgressDelegate(float progress, int completeFile, int totalFile, long downloadByte, long totalByte)
+{
+    Slider_Progress.value = progress;
+
+    Txt_FileCount.text =
+        $"{completeFile} / {totalFile}";
+
+    Txt_DownloadSize.text =
+        $"{ConvertByte(downloadByte)} / {ConvertByte(totalByte)}";
+}
+```
+<br/>
+<br/>
+
+### 3. Firebase 적용
+
+#### 구현 이유
+- 실제 서비스 환경에서 유저의 게임 이용 흐름과 주요 이벤트를 확인할 수 있도록 로그 수집 환경을 구성하기 위해
+- Android 빌드에서 앱 실행 및 주요 행동 데이터를 확인하여 추후 게임 데이터 분석에 활용하기 위해
+- Firebase Cloud Messaging을 적용하여 Push 알림 기능 구현을 위해
+
+#### 구현 방법
+- Firebase 프로젝트 생성 후 Android 앱을 등록하고 google-services.json을 Unity 프로젝트에 적용
+- Firebase SDK 초기화가 완료된 이후에만 Firebase 기능을 사용할 수 있도록 초기화 상태를 관리
+
+```C#
+public class FirebaseManager : Singleton<FirebaseManager>
+{
+    public bool IsInitialized { get; private set; }
+
+    public void Init()
+    {
+        Firebase.FirebaseApp.CheckAndFixDependenciesAsync().ContinueWith(task =>
+        {
+            var dependencyStatus = task.Result;
+
+            if (dependencyStatus == Firebase.DependencyStatus.Available)
+            {
+                Firebase.FirebaseApp app = Firebase.FirebaseApp.DefaultInstance;
+
+                IsInitialized = true;
+
+                Debug.LogWarning("Firebase Initialize Success");
+            }
+            else
+            {
+                Debug.LogError($"Firebase Initialize Failed : {dependencyStatus}");
+            }
+        });
+    }
+}
+```
+<br/>
+
+- Firebase Analytics를 이용하여 게임에서 발생하는 주요 이벤트를 기록
+- 주요 시점에서 이벤트를 전달하여 Firebase Analytics에서 유저 행동 데이터를 확인할 수 있도록 구성
+
+```C#
+FirebaseManager.Instance.LogEvent("Game Start");
+```
+<br/>
+
+- 필요에 따라 UserProperty를 등록할 수 있도록 공통 함수를 구성하여 유저 상태 및 게임 데이터를 Analytics 분석에 활용할 수 있도록 확장
+```C#
+public void SetUserProperty(string propertyName, string value)
+{
+    if (!IsInitialized)
+        return;
+
+    Firebase.Analytics.FirebaseAnalytics.SetUserProperty(propertyName, value);
+}
+```
+<br/>
+
+- Firebase Cloud Messaging을 함께 적용하여 Push 알림을 받을 수 있는 기반을 구성
+- Firebase를 게임 데이터 저장 용도로 사용하지 않고 Analytics 및 Messaging 역할로 분리
+
+<br/>
+
+
+### 4. Google 로그인 구현 (Universal SDK)
 <img src="https://github.com/user-attachments/assets/b6b0eef1-77d3-4b0a-82e5-209b516450b3" width="30%"/>
 <br/>
 
@@ -371,7 +543,7 @@ public static async Task<UserData_Common> GetUserCommonDataToConnect(string acco
 <br/>
 
 
-### 3. AWS 라이브 서버 셋팅
+### 5. AWS 라이브 서버 셋팅
 ![image](https://github.com/user-attachments/assets/6de974f7-44db-42d6-8e3c-092470ee9adc)
 <br/>
 
@@ -391,7 +563,7 @@ public static async Task<UserData_Common> GetUserCommonDataToConnect(string acco
 <br/>
 
 
-### 4. 블록 타입 구현 (AI 활용)
+### 6. 블록 타입 구현 (AI 활용)
 <img src="https://github.com/user-attachments/assets/c977b0e8-aef5-4ada-a269-22c5fe00ac9b" width="30%"/>
 <br/>
 
@@ -522,7 +694,7 @@ public void Update()
 <br/>
 
 
-### 5. HTTP 통신 방식의 랭킹 구현
+### 7. HTTP 통신 방식의 랭킹 구현
 <img src="https://github.com/user-attachments/assets/cb0af2da-6a81-47bd-842a-407c4ba263b8" width="30%"/>
 <br/>
 
@@ -676,7 +848,257 @@ for (int i = 0; i < m_UsersRankInfo.Count; ++i)
 <br/>
 
 
-### 2. DB 선택
+### 2. 번들 패치를 통한 APK 용량 감소 및 빌드 자동화
+
+#### 문제 상황
+- 기존에는 게임에서 사용하는 Prefab, Image, Sound 등의 리소스가 APK에 함께 포함되는 구조
+- 프로젝트에 리소스가 추가될수록 APK 자체의 용량도 함께 증가하며, 실제 Number Rush의 APK 크기가 `79.6MB`까지 증가
+- 라이브 서비스 중 리소스만 수정되더라도 앱에 리소스가 포함되어 있다면 새로운 빌드를 스토어에 다시 배포해야 하는 문제가 있음
+- 따라서 게임 리소스를 APK에서 분리하여 필요한 리소스를 서버에서 다운로드하는 패치 구조가 필요
+- AssetBundle 적용 이후에는 리소스마다 Bundle Name을 지정하고, 플랫폼과 버전에 맞게 AssetBundle을 반복해서 빌드해야 하기 때문에 수동 작업으로 관리할 경우 실수 가능성이 있다고 판단
+- APK 빌드와 AssetBundle 빌드 환경이 서로 달라지는 문제를 방지하기 위해 빌드 과정까지 하나의 툴에서 관리할 필요가 있었음
+
+#### 해결 방안
+
+##### AssetBundle을 이용한 게임 리소스 분리
+- 기존 APK 내부에 포함되던 게임 리소스를 `ResourcesBundle` 경로로 분리
+- Prefab, Image, Sound, AudioMixer 등의 리소스에 AssetBundle Name을 지정하여 별도의 Bundle 파일로 생성
+- 생성된 AssetBundle은 APK 내부에 다시 포함하지 않고 오브젝트 스토리지인 `Amazon S3`에 업로드
+- 클라이언트에서는 `Amazon CloudFront`를 통해 필요한 AssetBundle을 다운로드하도록 구성
+- 이를 통해 실행 파일에는 필요한 코드와 최소 리소스만 포함하고 실제 게임 리소스는 패치 서버에서 관리하도록 변경
+
+```text
+기존 구조
+
+APK
+├─ Script
+├─ Prefab
+├─ Image
+├─ Sound
+└─ 기타 Game Resource
+
+
+AssetBundle 적용 후
+
+APK
+├─ Script
+└─ 필수 Resource
+
+        ↓ 게임 실행
+
+Amazon CloudFront
+        ↓
+Amazon S3
+├─ PatchList.pat
+├─ Prefab AssetBundle
+├─ Image AssetBundle
+├─ Sound AssetBundle
+└─ 기타 AssetBundle
+```
+<br/>
+
+##### BuildWindow를 이용한 빌드 과정 자동화
+- APK와 AssetBundle을 각각 수동으로 설정하고 빌드하는 과정에서 발생할 수 있는 설정 실수를 줄이기 위해 Unity EditorWindow 기반 `BuildWindow` 제작
+- 하나의 BuildWindow에서 다음 작업을 처리할 수 있도록 구성
+
+```text
+BuildWindow
+
+Build Setting
+├─ Server Type 설정
+├─ Development Build 설정
+├─ Build Version 설정
+├─ Bundle Code 설정
+├─ Build Path 설정
+└─ APK Build
+
+Patch Setting
+├─ Bundle Name 지정
+├─ Bundle Name 제거
+└─ AssetBundle Build
+```
+<br/>
+
+##### AssetBundle Name 자동 지정
+- AssetBundle을 직접 관리하려면 리소스마다 올바른 Bundle Name이 지정되어 있어야 함
+- 리소스가 증가할수록 Inspector에서 Bundle Name을 직접 지정하는 것은 반복 작업이 많고 누락 가능성이 있음
+- BuildWindow의 `Patch Setting - Bundle Name - Save`를 실행하면 기존 Bundle Name을 정리하고 `ResourcesBundle` 아래의 리소스를 기준으로 Bundle Name을 자동 지정하도록 구성
+
+```C#
+private void SignBundleName()
+{
+    string[] allAssetName = AssetDatabase.GetAllAssetBundleNames();
+
+    for (int count = 0; count < allAssetName.Length; ++count)
+    {
+        AssetDatabase.RemoveAssetBundleName(allAssetName[count], true);
+    }
+
+    BundleBuilder.AssignAssetBundleName("Assets/ResourcesBundle");
+    ShowNotification(new GUIContent("Set BundleName"));
+}
+```
+<br/>
+
+- `Builder`에서는 프로젝트의 리소스 구조와 예외 설정을 기준으로 실제 AssetBundle 대상 리소스를 검색
+- 검색된 리소스의 경로와 Bundle Name을 비교하여 필요한 경우 자동으로 Bundle Name을 설정하고 다시 Import
+
+```C#
+public void AssignAssetBundleName(string resourceRootPath)
+{
+    string[] allAssetBundleNames = AssetDatabase.GetAllAssetBundleNames();
+    List<string> unnecessaryAssetbundleNameList = allAssetBundleNames.ToList();
+    List<AssetExceptionInfo> exceptionInfoList = GetExceptionInfo();
+    List<AssetInfo> assetInfoList = GetAssetInfoList(resourceRootPath, true, exceptionInfoList);
+
+    foreach (AssetInfo assetInfo in assetInfoList)
+    {
+        string resourcePath = assetInfo.Path;
+        string assetBundleName = assetInfo.Name;
+
+        AssetImporter assetImporter = AssetImporter.GetAtPath(resourcePath);
+
+        if (!assetImporter.assetBundleName.Equals(assetBundleName))
+        {
+            assetImporter.assetBundleName = assetBundleName;
+            assetImporter.SaveAndReimport();
+        }
+
+        unnecessaryAssetbundleNameList.Remove(assetBundleName);
+    }
+
+    foreach (string unnecessaryAssetBundleName in unnecessaryAssetbundleNameList)
+    {
+        AssetDatabase.RemoveAssetBundleName(unnecessaryAssetBundleName, true);
+    }
+}
+```
+<br/>
+
+##### BuildWindow를 이용한 AssetBundle 빌드
+- Bundle Name 설정 이후 BuildWindow의 `Patch Setting - Build - Run`을 통해 AssetBundle을 생성하도록 구성
+- 빌드 경로가 지정되어 있는지 확인하고 현재 Build Target이 Android인지 검증한 후 Bundle 빌드를 실행
+- 잘못된 플랫폼으로 AssetBundle을 생성하는 실수를 방지할 수 있도록 Build Target 검증 로직 추가
+
+```C#
+private void BuildBundle()
+{
+    if (string.IsNullOrEmpty(OutputPath))
+    {
+        Debug.LogError("[AssetBundle] Build Path가 설정되지 않았습니다.");
+        return;
+    }
+
+    if (EditorUserBuildSettings.activeBuildTarget
+        != BuildTarget.Android)
+    {
+        Debug.LogError($"[AssetBundle] 현재 Build Target이 Android가 아닙니다. " +
+            $"현재 Target : {EditorUserBuildSettings.activeBuildTarget}");
+
+        return;
+    }
+
+    EditorPrefs.SetString(KEY_BUILDPATH, OutputPath);
+
+    string bundleOutputPath = MakeBundleOutPut();
+    BundleBuilder.MakeAllBundles("Assets/ResourcesBundle", bundleOutputPath, EditorUserBuildSettings.activeBuildTarget);
+
+    if (Directory.Exists(bundleOutputPath))
+    {
+        EditorUtility.RevealInFinder(bundleOutputPath);
+    }
+}
+```
+<br/>
+
+##### 버전 및 플랫폼별 AssetBundle 관리
+- 서로 다른 게임 버전의 AssetBundle이 같은 위치에 생성되지 않도록 `ProductVersion`과 현재 Build Target을 기준으로 출력 경로를 자동 생성
+- 이를 통해 APK 버전과 패치 리소스의 버전을 구분하여 관리할 수 있도록 구성
+
+```C#
+private string MakeBundleOutPut()
+{
+    return $"{OutputPath}/AssetBundle/" + $"{ProductVersion}/" + $"{EditorUserBuildSettings.activeBuildTarget}";
+}
+```
+<br/>
+
+```text
+AssetBundle
+├─ 1.0.1
+│  └─ Android
+│     ├─ PatchList.pat
+│     └─ AssetBundles...
+│
+├─ 1.0.2
+│  └─ Android
+│     ├─ PatchList.pat
+│     └─ AssetBundles...
+│
+└─ 1.0.3
+   └─ Android
+      ├─ PatchList.pat
+      └─ AssetBundles...
+```
+<br/>
+
+- 최종적으로 BuildWindow에서 아래 순서로 APK 및 AssetBundle 빌드를 관리
+
+```text
+1. Build Setting
+   └─ Server / Version / Bundle Code / Build Path 설정
+
+2. Patch Setting
+   └─ Bundle Name - Save
+
+3. ResourcesBundle 리소스의 Bundle Name 자동 지정
+
+4. Patch Setting
+   └─ Build - Run
+
+5. 버전 / 플랫폼별 AssetBundle 생성
+
+6. AssetBundle + PatchList.pat
+   └─ Amazon S3 업로드
+
+7. Build - Run
+   └─ Bundle 모드가 적용된 APK 생성
+
+8. 게임 실행
+   └─ CloudFront를 통해 필요한 AssetBundle 다운로드
+```
+<br/>
+
+#### 실제 APK 용량 감소
+- AssetBundle 적용 전에는 게임 리소스가 APK에 함께 포함되어 `79.6MB`의 파일이 생성
+- 리소스를 AssetBundle로 분리하고 외부 패치 서버에서 다운로드하도록 변경한 이후 APK 크기가 `55.1MB`로 감소
+- 결과적으로 약 `24.5MB`의 APK 용량을 줄였으며 기존 크기 대비 약 `30.8%` 감소
+
+```text
+AssetBundle 적용 전 : 79.6 MB
+AssetBundle 적용 후 : 55.1 MB
+
+감소 용량 : 24.5 MB
+감소 비율 : 약 30.8%
+```
+<br/>
+
+#### 의견 결정
+
+##### AssetBundle 패치 + BuildWindow 사용
+- 게임 리소스를 APK에서 AssetBundle로 분리하여 APK 파일 크기를 `79.6MB → 55.1MB`로 감소
+- 리소스 분리만으로 약 `24.5MB`, 약 `30.8%`의 APK 용량 감소 효과를 직접 확인
+- APK에 모든 리소스를 포함하는 대신 AssetBundle을 `Amazon S3`에 저장하고 `Amazon CloudFront`를 통해 다운로드하는 패치 구조로 변경
+- 리소스만 수정된 경우 앱 전체를 다시 배포하지 않고 변경된 AssetBundle을 교체할 수 있는 기반을 구성
+- AssetBundle 적용으로 추가된 반복적인 빌드 작업을 줄이기 위해 직접 `BuildWindow`를 제작
+- BuildWindow에서 **APK 빌드, Server Type 및 버전 설정, Bundle Name 자동 지정/제거, AssetBundle 빌드**를 한 곳에서 처리하도록 구성
+- AssetBundle 출력 경로를 게임 버전과 플랫폼 기준으로 자동 분리하여 패치 파일의 버전 관리 과정도 단순화
+- 결과적으로 단순히 AssetBundle을 적용하는 것에서 끝나지 않고 **리소스 분리 → Bundle Name 자동 설정 → AssetBundle 빌드 → S3 업로드 → CloudFront 배포 → 클라이언트 패치 → APK 용량 감소**까지 실제 라이브 패치에 필요한 전체 흐름을 구현
+<br/>
+<br/>
+
+
+### 3. DB 선택
 ![image](https://github.com/user-attachments/assets/36831194-d2f7-4bdd-afa3-276e5e189fe8)
 <br/>
 
@@ -720,7 +1142,7 @@ for (int i = 0; i < m_UsersRankInfo.Count; ++i)
 <br/>
 
 
-### 3. AWS EC2 인스턴스 선택
+### 4. AWS EC2 인스턴스 선택
 
 #### 문제 상황
 - 로컬에서 개발한 ASP.NET Core + MongoDB 서버를 실제 Android 클라이언트가 접속할 수 있는 환경으로 배포해야 함
@@ -755,7 +1177,7 @@ for (int i = 0; i < m_UsersRankInfo.Count; ++i)
 <br/>
 
 
-### 4. Google 로그인 방식 선택
+### 5. Google 로그인 방식 선택
 
 #### 문제 상황
 - Google 계정을 이용해 유저를 식별하고 서버의 AccountCode로 사용할 고유 ID가 필요
