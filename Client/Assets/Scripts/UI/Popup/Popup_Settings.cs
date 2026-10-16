@@ -25,7 +25,7 @@ public class Popup_Settings : UIElement
     public override void Init()
     { 
         if (m_AudioMixer == null)
-            m_AudioMixer = ResourceLoader.LoadAssetResources<AudioMixer>("AudioMixer/AudioMixer");
+            m_AudioMixer = ResourceLoader.LoadAsset<AudioMixer>("AudioMixer/AudioMixer", "AudioMixer");
 
         Btn_Close.onClick.AddListener(OnClick_Close);
         Btn_Exit.onClick.AddListener(OnClick_Exit);
@@ -54,12 +54,12 @@ public class Popup_Settings : UIElement
 
         if (sound == -40f)	// -40일 때, 음악을 꺼줌
         {
-            Img_Slider_SFX.sprite = ResourceLoader.LoadAssetResources<Sprite>($"Image/Slider/Slider_HandleType_Frame_Off");
+            Img_Slider_SFX.sprite = ResourceLoader.LoadAsset<Sprite>($"Image/Slider", "Slider_HandleType_Frame_Off");
             m_AudioMixer.SetFloat("SFX", -80f);
         }
         else
         {
-            Img_Slider_SFX.sprite = ResourceLoader.LoadAssetResources<Sprite>($"Image/Slider/Slider_HandleType_Frame_On");
+            Img_Slider_SFX.sprite = ResourceLoader.LoadAsset<Sprite>($"Image/Slider", "Slider_HandleType_Frame_On");
             m_AudioMixer.SetFloat("SFX", sound);
         }
 
@@ -72,12 +72,12 @@ public class Popup_Settings : UIElement
 
         if (sound == -40f)	// -40일 때, 음악을 꺼줌
         {
-            Img_Slider_BGM.sprite = ResourceLoader.LoadAssetResources<Sprite>($"Image/Slider/Slider_HandleType_Frame_Off");
+            Img_Slider_BGM.sprite = ResourceLoader.LoadAsset<Sprite>($"Image/Slider", "Slider_HandleType_Frame_Off");
             m_AudioMixer.SetFloat("BGM", -80f);
         }
         else
         {
-            Img_Slider_BGM.sprite = ResourceLoader.LoadAssetResources<Sprite>($"Image/Slider/Slider_HandleType_Frame_On");
+            Img_Slider_BGM.sprite = ResourceLoader.LoadAsset<Sprite>($"Image/Slider", "Slider_HandleType_Frame_On");
             m_AudioMixer.SetFloat("BGM", sound);
         }
 
@@ -96,10 +96,10 @@ public class Popup_Settings : UIElement
         Slider_BGM.value = volume_BGM;
 
         if (volume_SFX == -40f)
-            Img_Slider_SFX.sprite = ResourceLoader.LoadAssetResources<Sprite>($"Image/Slider/Slider_HandleType_Frame_Off");
+            Img_Slider_SFX.sprite = ResourceLoader.LoadAsset<Sprite>($"Image/Slider", "Slider_HandleType_Frame_Off");
 
         if (volume_BGM == -40f)
-            Img_Slider_BGM.sprite = ResourceLoader.LoadAssetResources<Sprite>($"Image/Slider/Slider_HandleType_Frame_Off");
+            Img_Slider_BGM.sprite = ResourceLoader.LoadAsset<Sprite>($"Image/Slider", "Slider_HandleType_Frame_Off");
     }
 
     private void OnClick_Close()

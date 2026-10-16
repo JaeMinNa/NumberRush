@@ -34,10 +34,10 @@ public class Popup_Ranking : UIElement
     public override void Init()
     {
         if (m_SlotNumberObj == null)
-            m_SlotNumberObj = ResourceLoader.LoadAssetResources<GameObject>("Prefabs/UI/Slot/Slot_Number");
+            m_SlotNumberObj = ResourceLoader.LoadAsset<GameObject>("Prefabs/UI/Slot/Slot_Number", "Slot_Number");
 
         if (m_SlotRankingObj == null)
-            m_SlotRankingObj = ResourceLoader.LoadAssetResources<GameObject>("Prefabs/UI/Slot/Slot_Ranking");
+            m_SlotRankingObj = ResourceLoader.LoadAsset<GameObject>("Prefabs/UI/Slot/Slot_Ranking", "Slot_Ranking");
 
         Btn_Close.onClick.AddListener(OnClick_Close);
     }
@@ -54,22 +54,22 @@ public class Popup_Ranking : UIElement
         switch (m_MyRankInfo.Rank)
         {
             case 1:
-                Img_Icon.sprite = ResourceLoader.LoadAssetResources<Sprite>($"Image/Ranking/icon_medal_gold");
+                Img_Icon.sprite = ResourceLoader.LoadAsset<Sprite>($"Image/Ranking", "icon_medal_gold");
                 Text_Rank.color = new Color(243f / 255f, 97f / 255f, 30f / 255f);
                 break;
 
             case 2:
-                Img_Icon.sprite = ResourceLoader.LoadAssetResources<Sprite>($"Image/Ranking/icon_medal_silver");
+                Img_Icon.sprite = ResourceLoader.LoadAsset<Sprite>($"Image/Ranking", "icon_medal_silver");
                 Text_Rank.color = new Color(136f / 255f, 136f / 255f, 136f / 255f);
                 break;
 
             case 3:
-                Img_Icon.sprite = ResourceLoader.LoadAssetResources<Sprite>($"Image/Ranking/icon_medal_bronze");
+                Img_Icon.sprite = ResourceLoader.LoadAsset<Sprite>($"Image/Ranking", "icon_medal_bronze");
                 Text_Rank.color = new Color(215f / 255f, 102f / 255f, 57f / 255f);
                 break;
 
             default:
-                Img_Icon.sprite = ResourceLoader.LoadAssetResources<Sprite>($"Image/Ranking/Frame_Circle_78");
+                Img_Icon.sprite = ResourceLoader.LoadAsset<Sprite>($"Image/Ranking", "Frame_Circle_78");
                 Img_Icon.rectTransform.sizeDelta = new Vector2(90f, 90f);
                 Img_Icon.color = new Color(131f / 255f, 171f / 255f, 219f / 255f);
                 Text_Rank.color = new Color(255f / 255f, 255f / 255f, 255f / 255f);
@@ -77,7 +77,7 @@ public class Popup_Ranking : UIElement
         }
 
         Text_Rank.text = m_MyRankInfo.Rank.ToString();
-        Img_Character.sprite = ResourceLoader.LoadAssetResources<Sprite>($"Image/Character/Character_Sample{m_MyRankInfo.ImageNum}");
+        Img_Character.sprite = ResourceLoader.LoadAsset<Sprite>("Image/Character", $"Character_Sample{m_MyRankInfo.ImageNum}");
         Text_LvNickName.text = $"LV {GameUtil.GetLevel(m_MyRankInfo.Score)}  {m_MyRankInfo.NickName}";
         Text_Score.text = $"SCORE : {m_MyRankInfo.Score}";
         Text_Time.text = $"TIME : {m_MyRankInfo.Time.ToString("F2")}";

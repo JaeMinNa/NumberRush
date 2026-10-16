@@ -15,6 +15,7 @@ public class SoundManager : Singleton<SoundManager>
     private int m_SoundNum;
     private float m_MaxDistance = 50f;
     private float m_StartVolume = 1f;
+    private bool m_IsInitialized = false;
 
     public static SoundManager Instance
     {
@@ -57,15 +58,41 @@ public class SoundManager : Singleton<SoundManager>
 
     protected override void CreateInstance()
     {
-        //var mainCamera = Camera.main;
-        transform.AddComponent<AudioListener>();
+
+    }
+    #endregion
+
+    #region Public Method
+    // 사운드가 거리에 따라 볼륨 조절이 필요할 때
+    // 2D에서는 Vector2.Distance 사용
+    //public void StartSFX(string name, Vector3 position)
+    //{
+    //    var MyCharacter = GameObject.Find($"{DataManager.Instance.GetMyUserData().UserHeroData.EquipHero.HeroName}(Clone)");
+    //    if (MyCharacter == null)
+    //        return;
+
+    //    m_SoundNum = m_SoundNum % m_EtcSFXAudioSources.Length;
+
+    //    float distance = Vector3.Distance(position, MyCharacter.transform.position);
+    //    float volume = 1f - (distance / m_MaxDistance);
+    //    m_EtcSFXAudioSources[m_SoundNum].volume = Mathf.Clamp01(volume) * m_StartVolume;
+    //    m_EtcSFXAudioSources[m_SoundNum].PlayOneShot(m_SfxDic[name]);
+
+    //    m_SoundNum++;
+    //}
+
+    public void SetSoundManager()
+    {
+        if (m_IsInitialized)
+            return;
+
         m_BGMAudioSource = transform.AddComponent<AudioSource>();
         m_PlayerSFXAuidoSource = transform.AddComponent<AudioSource>();
         for (int index = 0; index < m_EtcSFXAudioSources.Length; ++index)
             m_EtcSFXAudioSources[index] = transform.AddComponent<AudioSource>();
 
         // AudioMixerGroup 불러오기
-        AudioMixer mixer = ResourceLoader.LoadAssetResources<AudioMixer>("AudioMixer/AudioMixer");
+        AudioMixer mixer = ResourceLoader.LoadAsset<AudioMixer>("AudioMixer/AudioMixer", "AudioMixer");
         AudioMixerGroup[] bgmGroups = mixer.FindMatchingGroups("BGM");
         AudioMixerGroup[] sfxGroups = mixer.FindMatchingGroups("SFX");
         AudioMixerGroup bgmGroup = bgmGroups.Length > 0 ? bgmGroups[0] : null;
@@ -90,17 +117,17 @@ public class SoundManager : Singleton<SoundManager>
         }
 
         // BGM
-        m_BgmDic.Add("BGM_Title", ResourceLoader.LoadAssetResources<AudioClip>("Sound/BGM/BGM_Title"));
-        m_BgmDic.Add("BGM_Lobby", ResourceLoader.LoadAssetResources<AudioClip>("Sound/BGM/BGM_Lobby"));
-        m_BgmDic.Add("BGM_Game", ResourceLoader.LoadAssetResources<AudioClip>("Sound/BGM/BGM_Game"));
+        m_BgmDic.Add("BGM_Title", ResourceLoader.LoadAsset<AudioClip>("Sound/BGM/BGM_Title", "BGM_Title"));
+        m_BgmDic.Add("BGM_Lobby", ResourceLoader.LoadAsset<AudioClip>("Sound/BGM/BGM_Lobby", "BGM_Lobby"));
+        m_BgmDic.Add("BGM_Game", ResourceLoader.LoadAsset<AudioClip>("Sound/BGM/BGM_Game", "BGM_Game"));
 
         // SFX
-        m_SfxDic.Add("ClickButton", ResourceLoader.LoadAssetResources<AudioClip>("Sound/SFX/UI/ClickButton"));
-        m_SfxDic.Add("MissButton", ResourceLoader.LoadAssetResources<AudioClip>("Sound/SFX/UI/MissButton"));
-        m_SfxDic.Add("BuyButton", ResourceLoader.LoadAssetResources<AudioClip>("Sound/SFX/UI/BuyButton"));
-        m_SfxDic.Add("DestroyLine", ResourceLoader.LoadAssetResources<AudioClip>("Sound/SFX/Game/DestroyLine"));
-        m_SfxDic.Add("FailButton", ResourceLoader.LoadAssetResources<AudioClip>("Sound/SFX/Game/FailButton"));
-        m_SfxDic.Add("SuccessButton", ResourceLoader.LoadAssetResources<AudioClip>("Sound/SFX/Game/SuccessButton"));
+        m_SfxDic.Add("ClickButton", ResourceLoader.LoadAsset<AudioClip>("Sound/SFX/UI/ClickButton", "ClickButton"));
+        m_SfxDic.Add("MissButton", ResourceLoader.LoadAsset<AudioClip>("Sound/SFX/UI/MissButton", "MissButton"));
+        m_SfxDic.Add("BuyButton", ResourceLoader.LoadAsset<AudioClip>("Sound/SFX/UI/BuyButton", "BuyButton"));
+        m_SfxDic.Add("DestroyLine", ResourceLoader.LoadAsset<AudioClip>("Sound/SFX/Game/DestroyLine", "DestroyLine"));
+        m_SfxDic.Add("FailButton", ResourceLoader.LoadAsset<AudioClip>("Sound/SFX/Game/FailButton", "FailButton"));
+        m_SfxDic.Add("SuccessButton", ResourceLoader.LoadAsset<AudioClip>("Sound/SFX/Game/SuccessButton", "SuccessButton"));
 
         // 볼륨 설정
         float volume_SFX = PlayerPrefs.GetFloat("Volume_SFX");
@@ -123,36 +150,24 @@ public class SoundManager : Singleton<SoundManager>
         {
             mixer.SetFloat("BGM", volume_BGM);
         }
+
+        m_IsInitialized = true;
     }
-    #endregion
 
-        #region Public Method
-        // 사운드가 거리에 따라 볼륨 조절이 필요할 때
-        // 2D에서는 Vector2.Distance 사용
-        //public void StartSFX(string name, Vector3 position)
-        //{
-        //    var MyCharacter = GameObject.Find($"{DataManager.Instance.GetMyUserData().UserHeroData.EquipHero.HeroName}(Clone)");
-        //    if (MyCharacter == null)
-        //        return;
-
-        //    m_SoundNum = m_SoundNum % m_EtcSFXAudioSources.Length;
-
-        //    float distance = Vector3.Distance(position, MyCharacter.transform.position);
-        //    float volume = 1f - (distance / m_MaxDistance);
-        //    m_EtcSFXAudioSources[m_SoundNum].volume = Mathf.Clamp01(volume) * m_StartVolume;
-        //    m_EtcSFXAudioSources[m_SoundNum].PlayOneShot(m_SfxDic[name]);
-
-        //    m_SoundNum++;
-        //}
-
-        // Player에서 출력되는 사운드
+    // Player에서 출력되는 사운드
     public void StartSFX(string name)
     {
+        if (!m_IsInitialized)
+            return;
+
         m_PlayerSFXAuidoSource.PlayOneShot(m_SfxDic[name]);
     }
 
     public void StartBGM(string name)
     {
+        if (!m_IsInitialized)
+            return;
+
         m_BGMAudioSource.Stop();
         m_BGMAudioSource.clip = m_BgmDic[name];
         m_BGMAudioSource.Play();
@@ -160,6 +175,9 @@ public class SoundManager : Singleton<SoundManager>
 
     public void StopBGM()
     {
+        if (!m_IsInitialized)
+            return;
+
         if (m_BGMAudioSource != null)
             m_BGMAudioSource.Stop();
     }

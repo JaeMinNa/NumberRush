@@ -12,26 +12,40 @@ public class TitleScene : MonoBehaviour
         UIManager.Instance.SetUIRoot(Root_UI);
         UIManager.Instance.SetActiveRoot(UI.BackGround, false);
 
-       //// Test
-       //// 로그인(나중에 구글 로그인으로 대체)
-       //// GameManager.Instance.AccountCode = "1234";
-       //// NetworkManager.Instance.SendPacket(PacketType.GetUserData);
+        // 번들 패치 확인
+        if (!Util.IsEditor() ||
+            GameManager.Instance.GameConfig.ResourceLoadType() == ResourceType.Bundle)
+        {
+            Debug.LogWarning("Resource Type : Bundle");
 
-       //// 5초 대기
-       //// await UniTask.Delay(5000);
+            // 패치 다운로드가 실제로 완료됐을 때 호출
+            PatchManager.PatchCompleteDelegate = OnPatchComplete;
 
-       //// 닉네임 변경
-       //// var Head = Util.MakeHeaderData(UserContents.ChangeNickName, "Jaemin");
-       //// NetworkManager.Instance.SendContentsPacket(ContentsType.User, Head);
+            bool isComplete = await PatchManager.Instance.CheckPatch();
+            if (!isComplete)
+            {
+                Debug.LogWarning("[TitleScene] 패치 다운로드 대기");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("Resource Type : Local");
 
-       //// 5초 대기
-       //// await UniTask.Delay(5000);
+            OpenTitleWindow();
+        }
+    }
 
-       //// 서버 유저 정보 가져 오기
-       ////var Header = Util.MakeHeaderData(UserContents.GetData);
-       //// NetworkManager.Instance.SendContentsPacket(ContentsType.User, Header);
+    private void OnPatchComplete()
+    {
+        Debug.LogWarning("[TitleScene] 패치 완료");
 
-        // 타이틀
+        OpenTitleWindow();
+    }
+
+    private void OpenTitleWindow()
+    {
+        Debug.LogWarning("[TitleScene] TitleWindow Open");
+
         UIManager.Instance.Open<TitleWindow>(UI.Main, "Prefabs/UI/Window/TitleWindow");
     }
 }

@@ -74,12 +74,14 @@ public class Popup_System : UIElement
     #region Button Event
     private void OnClick_OK()
     {
-        if (MyData != null)
-            MyData.OkAction?.Invoke();
-
         SoundManager.Instance.StartSFX("ClickButton");
 
+        var okAction = MyData?.OkAction;
+
         UIManager.Instance.Close<Popup_System>();
+
+        // 시스템 팝업이 완전히 닫힌 뒤 Action 실행
+        okAction?.Invoke();
     }
 
     private void OnClick_Cancel()

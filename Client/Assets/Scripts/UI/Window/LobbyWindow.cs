@@ -44,7 +44,7 @@ public class LobbyWindow : UIElement
     {
         SoundManager.Instance.StartBGM("BGM_Lobby");
 
-        Img_Character.sprite = ResourceLoader.LoadAssetResources<Sprite>($"Image/Character/Character_Sample{User.UserCommonData.ImageNum}");
+        Img_Character.sprite = ResourceLoader.LoadAsset<Sprite>("Image/Character", $"Character_Sample{User.UserCommonData.ImageNum}");
         Text_Score.text = $"SCORE : {User.UserGameData.Score}";
         Text_Level.text = GameUtil.GetLevel(User.UserGameData.Score).ToString();
         Text_NickName.text = User.UserCommonData.NickName;
@@ -57,7 +57,7 @@ public class LobbyWindow : UIElement
 
     public override void OnRefresh()
     {
-        Img_Character.sprite = ResourceLoader.LoadAssetResources<Sprite>($"Image/Character/Character_Sample{User.UserCommonData.ImageNum}");
+        Img_Character.sprite = ResourceLoader.LoadAsset<Sprite>("Image/Character", $"Character_Sample{User.UserCommonData.ImageNum}");
         Text_NickName.text = User.UserCommonData.NickName;
         Text_Gold.text = User.UserGameData.Gold.ToString();
     }

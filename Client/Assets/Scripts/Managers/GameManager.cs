@@ -6,8 +6,9 @@ using UnityEngine.SceneManagement;
 
 public class GameManager : Singleton<GameManager>
 {
-    private ServerType m_ServerType = ServerType.Live;
+    private ServerType m_ServerType = ServerType.Local;
     private string m_AccountCode = string.Empty;
+    private GameConfig m_GameConfig = null;
 
     public static GameManager Instance
     {
@@ -42,6 +43,21 @@ public class GameManager : Singleton<GameManager>
         }
     }
 
+    #region GameConfig
+    public GameConfig GameConfig
+    {
+        get
+        {
+            if (m_GameConfig == null)
+            {
+                m_GameConfig = ResourceLoader.LoadAssetResources<GameConfig>("Data/GameConfig");
+            }
+
+            return m_GameConfig;
+        }
+    }
+    #endregion
+
     #region Get / Set
     public string AccountCode
     {
@@ -64,7 +80,11 @@ public class GameManager : Singleton<GameManager>
     #region Override Method
     protected override void CreateInstance()
     {
+        // 서버 설정
+        m_ServerType = GameConfig.ServerConnectType();
 
+        // 패치 주소 설정
+        GameConfig.SetPatchAddress("https://dpy99u25ih8lc.cloudfront.net/Number%20Rush");
     }
 
     public override void DestroyInstance()
@@ -76,10 +96,12 @@ public class GameManager : Singleton<GameManager>
     #region Public Method
     public void InitDefaultManager()
     {
-        //_ = NetworkManager.Instance;
-        //_ = PatchManager.Instance;
+        _ = NetworkManager.Instance;
+        _ = PatchManager.Instance;
         _ = UIManager.Instance;
         _ = SoundManager.Instance;
+        _ = FirebaseManager.Instance;
+
         //_ = PoolManager.Instance;
         //_ = BackKeyManager.Instance;
         //_ = RedPointManager.Instance;

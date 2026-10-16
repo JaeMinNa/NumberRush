@@ -326,7 +326,7 @@ public class ChapterModule : BattleModule
         m_Time = 0f;
 
         // Block Prefab 로드
-        m_BlockPrefab = ResourceLoader.LoadAssetResources<GameObject>("Prefabs/Game/Block/Block");
+        m_BlockPrefab = ResourceLoader.LoadAsset<GameObject>("Prefabs/Game/Block/Block", "Block");
 
         // 장착 숫자 
         m_EquipNumber = User.UserNumberData.EquipNumber;

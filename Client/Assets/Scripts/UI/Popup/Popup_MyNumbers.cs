@@ -33,7 +33,7 @@ public class Popup_MyNumbers : UIElement
     public override void Init()
     {
         if (m_SlotNumberObj == null)
-            m_SlotNumberObj = ResourceLoader.LoadAssetResources<GameObject>("Prefabs/UI/Slot/Slot_Number");
+            m_SlotNumberObj = ResourceLoader.LoadAsset<GameObject>("Prefabs/UI/Slot/Slot_Number", "Slot_Number");
 
         Btn_Close.onClick.AddListener(OnClick_Quit);
     }
@@ -156,7 +156,7 @@ public class Popup_MyNumbers : UIElement
 
     private void SetUserInfo()
     {
-        Img_Character.sprite = ResourceLoader.LoadAssetResources<Sprite>($"Image/Character/Character_Sample{User.UserCommonData.ImageNum}");
+        Img_Character.sprite = ResourceLoader.LoadAsset<Sprite>("Image/Character", $"Character_Sample{User.UserCommonData.ImageNum}");
         Text_Nickname.text = User.UserCommonData.NickName;
         Text_Level.text = $"Lv. {GameUtil.GetLevel(User.UserGameData.Score)}";
     }

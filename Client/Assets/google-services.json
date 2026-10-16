@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "704775638729",
+    "project_id": "number-rush-c6d76",
+    "storage_bucket": "number-rush-c6d76.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:704775638729:android:57dccc9c8b5c7b599c4718",
+        "android_client_info": {
+          "package_name": "com.JaeMinsGame.NumberRush"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "704775638729-76pktougt4vgs8mbrcsq6f74do6qcqe4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.JaeMinsGame.NumberRush",
+            "certificate_hash": "0c6854717df41913fc922e7a7a87a2da913a958a"
+          }
+        },
+        {
+          "client_id": "704775638729-ah1tr7kpg3eq2gcptsqt1gq9bl0b3s6t.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB2EyJZUz8rAXVu0Uugmgyl-qTT7nDyjPg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "704775638729-ah1tr7kpg3eq2gcptsqt1gq9bl0b3s6t.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -31,8 +31,9 @@ public class TitleWindow : UIElement
         Btn_GuestLogin.onClick.AddListener(OnClick_GuestLogin);
     }
 
-    public override void OnOpen(List<object> args)
+    public async override void OnOpen(List<object> args)
     {
+        SoundManager.Instance.SetSoundManager();
         SoundManager.Instance.StartBGM("BGM_Title");
 
         SetLogin();
@@ -78,6 +79,12 @@ public class TitleWindow : UIElement
 
     private void EnterLobbyScene()
     {
+        // 에디터 로그인이 아닐 때, 파이어베이스 UserId 등록
+        if(!Util.IsEditor())
+        {
+            FirebaseManager.Instance.SetUserId(GameManager.Instance.AccountCode);
+        }
+
         GameManager.Instance.LoadLobbyScenen();
     }
 

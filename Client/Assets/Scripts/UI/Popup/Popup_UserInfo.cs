@@ -38,7 +38,7 @@ public class Popup_UserInfo : UIElement
 
     public override void OnOpen(List<object> Args)
     {
-        Img_CurCharacter.sprite = ResourceLoader.LoadAssetResources<Sprite>($"Image/Character/Character_Sample{User.UserCommonData.ImageNum}");
+        Img_CurCharacter.sprite = ResourceLoader.LoadAsset<Sprite>("Image/Character", $"Character_Sample{User.UserCommonData.ImageNum}");
         Text_Score.text = $"SCORE : {User.UserGameData.Score}";
         Text_Level.text = GameUtil.GetLevel(User.UserGameData.Score).ToString();
         Text_NickName.text = User.UserCommonData.NickName;
@@ -53,7 +53,7 @@ public class Popup_UserInfo : UIElement
 
     public override void OnRefresh()
     {
-        Img_CurCharacter.sprite = ResourceLoader.LoadAssetResources<Sprite>($"Image/Character/Character_Sample{User.UserCommonData.ImageNum}");
+        Img_CurCharacter.sprite = ResourceLoader.LoadAsset<Sprite>("Image/Character", $"Character_Sample{User.UserCommonData.ImageNum}");
         Text_NickName.text = User.UserCommonData.NickName;
 
         SetSelectCharacters();

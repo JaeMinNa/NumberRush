@@ -40,7 +40,7 @@ public class IngameWindow : UIElement
             m_ChapterModule = BattleModule.Instance as ChapterModule;
 
         if (m_SlotNumberObj == null)
-            m_SlotNumberObj = ResourceLoader.LoadAssetResources<GameObject>("Prefabs/UI/Slot/Slot_Number");
+            m_SlotNumberObj = ResourceLoader.LoadAsset<GameObject>("Prefabs/UI/Slot/Slot_Number", "Slot_Number");
 
         InitSlots();
 

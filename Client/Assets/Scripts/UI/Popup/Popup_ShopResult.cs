@@ -20,7 +20,7 @@ public class Popup_ShopResult : UIElement
     public override void Init()
     {
         if (m_SlotNumberObj == null)
-            m_SlotNumberObj = ResourceLoader.LoadAssetResources<GameObject>("Prefabs/UI/Slot/Slot_Number");
+            m_SlotNumberObj = ResourceLoader.LoadAsset<GameObject>("Prefabs/UI/Slot/Slot_Number", "Slot_Number");
 
         Btn_Close.onClick.AddListener(OnClick_Close);
     }

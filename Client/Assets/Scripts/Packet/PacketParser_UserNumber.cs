@@ -43,6 +43,8 @@ public partial class PacketSystem
                         List<int> numbers = Util.ToObjectJson<List<int>>(Data);
 
                         UIManager.Instance.Open<Popup_ShopResult>(UI.Popup, "Prefabs/UI/Popup/Popup_ShopResult", new List<object> { numbers });
+
+                        FirebaseManager.Instance.LogEvent("MyGold", Type.ToString(), User.UserGameData.Gold);
                     }
                     else
                     {

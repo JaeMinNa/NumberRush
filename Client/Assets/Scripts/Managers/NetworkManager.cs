@@ -89,7 +89,7 @@ public partial class NetworkManager : Singleton<NetworkManager>
         formData.AddField("AccountCode", GameManager.Instance.AccountCode);
         formData.AddField("Data", sendData);
 
-        string Url = Util.GetServerUrl(GameManager.Instance.GetServerType());
+        string Url = GameManager.Instance.GameConfig.ServerAddress();
 
         //UIManager.Instance.SetTouchBlock(true);
 

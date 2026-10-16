@@ -1,9 +1,25 @@
 <dependencies>
   <packages>
     <package>com.github.coolishbee:universal-sdk-android:3.0.9</package>
+    <package>com.google.android.gms:play-services-base:18.10.1</package>
     <package>com.google.code.gson:gson:2.8.9</package>
+    <package>com.google.firebase:firebase-analytics:23.2.0</package>
+    <package>com.google.firebase:firebase-analytics-unity:13.17.0</package>
+    <package>com.google.firebase:firebase-app-unity:13.17.0</package>
+    <package>com.google.firebase:firebase-common:22.2.1</package>
+    <package>com.google.firebase:firebase-iid:21.1.0</package>
+    <package>com.google.firebase:firebase-messaging:25.1.3</package>
+    <package>com.google.firebase:firebase-messaging-unity:13.17.0</package>
+    <package>com.google.flatbuffers:flatbuffers-java:1.12.0</package>
   </packages>
-  <files />
+  <files>
+    <file>Assets/GeneratedLocalRepo/Firebase/m2repository/com/google/firebase/firebase-analytics-unity/13.17.0/firebase-analytics-unity-13.17.0.aar</file>
+    <file>Assets/GeneratedLocalRepo/Firebase/m2repository/com/google/firebase/firebase-analytics-unity/13.17.0/firebase-analytics-unity-13.17.0.pom</file>
+    <file>Assets/GeneratedLocalRepo/Firebase/m2repository/com/google/firebase/firebase-app-unity/13.17.0/firebase-app-unity-13.17.0.aar</file>
+    <file>Assets/GeneratedLocalRepo/Firebase/m2repository/com/google/firebase/firebase-app-unity/13.17.0/firebase-app-unity-13.17.0.pom</file>
+    <file>Assets/GeneratedLocalRepo/Firebase/m2repository/com/google/firebase/firebase-messaging-unity/13.17.0/firebase-messaging-unity-13.17.0.aar</file>
+    <file>Assets/GeneratedLocalRepo/Firebase/m2repository/com/google/firebase/firebase-messaging-unity/13.17.0/firebase-messaging-unity-13.17.0.pom</file>
+  </files>
   <settings>
     <setting name="androidAbis" value="arm64-v8a" />
     <setting name="bundleId" value="com.JaeMinsGame.NumberRush" />

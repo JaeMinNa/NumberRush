@@ -188,7 +188,7 @@ public class UIManager : Singleton<UIManager>
         GameObject prefab;
         if (IsBundle)
         {
-            PrefabPath = $"Prefab/{PrefabPath}";
+            PrefabPath = $"{PrefabPath}";
             string AssetName = PrefabPath.Split('/').Last();
             prefab = ResourceLoader.LoadAsset<GameObject>(PrefabPath, AssetName);
         }
@@ -221,7 +221,7 @@ public class UIManager : Singleton<UIManager>
         return;
     }
 
-    public T Open<T>(UI Depth, string PrefabPath, List<object> Args = null, bool SetFirst = false, bool IsBundle = false) where T : UIElement
+    public T Open<T>(UI Depth, string PrefabPath, List<object> Args = null, bool SetFirst = false, bool IsBundle = true) where T : UIElement
     {
         if (m_UIDictionary.ContainsKey(typeof(T)))
         {
@@ -242,7 +242,7 @@ public class UIManager : Singleton<UIManager>
 
         if (IsBundle)
         {
-            PrefabPath = $"Prefab/{PrefabPath}";
+            PrefabPath = $"{PrefabPath}";
             string AssetName = PrefabPath.Split('/').Last();
             prefab = ResourceLoader.LoadAsset<GameObject>(PrefabPath, AssetName);
         }
@@ -455,7 +455,7 @@ public class UIManager : Singleton<UIManager>
         GameObject prefab;
         if (IsBundle)
         {
-            PrefabPath = $"Prefab/{PrefabPath}";
+            PrefabPath = $"{PrefabPath}";
             string AssetName = PrefabPath.Split('/').Last();
             prefab = await ResourceLoader.LoadAssetAsync<GameObject>(PrefabPath, AssetName);
         }

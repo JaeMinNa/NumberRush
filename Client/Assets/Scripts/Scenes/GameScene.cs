@@ -19,7 +19,7 @@ public class GameScene : MonoBehaviour
         await BattleModule.Instance.StartGame();
 
         // BackGround 생성
-        GameObject backgroundPrefab = ResourceLoader.LoadAssetResources<GameObject>("Prefabs/Game/Background/Background");
+        GameObject backgroundPrefab = ResourceLoader.LoadAsset<GameObject>("Prefabs/Game/Background/Background", "Background");
         Instantiate(backgroundPrefab, Root_Environment.transform);
 
         // IngameWindow 생성

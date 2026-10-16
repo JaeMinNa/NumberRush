@@ -32,14 +32,29 @@ public class ResourceLoader
 
     private static void Init()
     {
-        m_Loader = new LocalResourceLoader();
+#if UNITY_EDITOR
+        if (GameManager.Instance.GameConfig.ResourceLoadType() == ResourceType.Bundle)
+        {
+            Debug.LogWarning("[ResourceLoader] Editor - DownloadResourceLoader");
+            m_Loader = new DownloadResourceLoader();
+        }
+        else
+        {
+            Debug.LogWarning("[ResourceLoader] Editor - LocalResourceLoader");
+            m_Loader = new LocalResourceLoader();
+        }
+#else
+    m_Loader = new DownloadResourceLoader();
+#endif
     }
 
+    // ResourcesBundle 폴더에 있는 리소스를 사용
     public static T LoadAsset<T>(string bundleName, string assetName) where T : Object
     {
         return Loader.LoadAsset<T>(bundleName, assetName);
     }
 
+    // Resources 폴더에 있는 리소스를 사용
     public static T LoadAssetResources<T>(string assetPath) where T : Object
     {
         return Resources.Load<T>(assetPath);
